@@ -4,13 +4,19 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>OpenClaw Monitor</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="/static/css/style.css">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 <body>
     <div class="container">
         <header>
-            <h1>🔍 OpenClaw Monitor</h1>
+            <h1>
+                <span style="background: linear-gradient(135deg, #6366f1, #22d3ee); -webkit-background-clip: text; -webkit-text-fill-color: transparent; font-size: 28px;">🔍</span>
+                OpenClaw Monitor
+            </h1>
             <div class="status-bar">
                 <span id="connection-status" class="status-badge">连接中...</span>
                 <span id="last-update">-</span>
@@ -58,7 +64,7 @@
             <!-- TPM Stats -->
             <section class="card tpm-card">
                 <div class="card-header">
-                    <h2>⚡ TPM 统计 (Tokens Per Minute)</h2>
+                    <h2>⚡ TPM 统计</h2>
                     <div class="filters">
                         <select id="tpm-hours-filter">
                             <option value="1">最近 1 小时</option>
@@ -167,7 +173,7 @@
             <!-- Sessions Table -->
             <section class="card">
                 <div class="card-header">
-                    <h2>会话列表</h2>
+                    <h2>📋 会话列表</h2>
                     <div class="filters">
                         <select id="session-time-filter">
                             <option value="">全部时间</option>
@@ -210,10 +216,9 @@
                 </table>
             </section>
 
-
             <!-- Model Stats -->
             <section class="card">
-                <h2>模型统计</h2>
+                <h2>🤖 模型统计</h2>
                 <table class="models-table">
                     <thead>
                         <tr>
@@ -237,19 +242,42 @@
         <!-- Session Detail Modal -->
         <div id="session-modal" class="modal" style="display: none;">
             <div class="modal-content">
-                <div class="modal-header">
-                    <h3>会话详情</h3>
+                <div class="modal-header-fixed">
+                    <h3>📝 会话详情</h3>
                     <button class="close-btn" onclick="closeModal()">×</button>
                 </div>
-                <div id="session-detail-content"></div>
+
+                <div class="session-tabs-fixed">
+                    <button class="tab-btn active" onclick="switchTab('overview', this)">概览</button>
+                    <button class="tab-btn" onclick="switchTab('trace', this)">Trace</button>
+                    <button class="tab-btn" onclick="switchTab('tokens', this)">Token</button>
+                </div>
+
+                <div class="modal-body" id="session-modal-body">
+                    <div id="tab-overview" class="tab-content active">
+                    </div>
+
+                    <div id="tab-trace" class="tab-content">
+                        <div class="trace-timeline" id="trace-timeline"></div>
+                        <div id="trace-loading" class="trace-loading" style="display: none;">
+                            <span class="loading-spinner"></span> 正在加载中...
+                        </div>
+                        <div id="trace-end" class="trace-end" style="display: none;">
+                            没有更多数据了
+                        </div>
+                    </div>
+
+                    <div id="tab-tokens" class="tab-content">
+                    </div>
+                </div>
             </div>
         </div>
 
         <footer>
-            <p>OpenClaw OTel Monitor v0.1.0</p>
+            <p>OpenClaw OTel Monitor v0.1.0 · Built with ❤️</p>
         </footer>
     </div>
 
-    <script src="/static/js/app.js?v=5"></script>
+    <script src="/static/js/app.js?v=6"></script>
 </body>
 </html>

@@ -153,6 +153,27 @@ function debounce(func, wait) {
     };
 }
 
+// Chart color palette - Modern design
+const chartColors = {
+    primary: '#6366f1',
+    primaryLight: 'rgba(99, 102, 241, 0.15)',
+    secondary: '#22d3ee',
+    secondaryLight: 'rgba(34, 211, 238, 0.15)',
+    success: '#34d399',
+    successLight: 'rgba(52, 211, 153, 0.15)',
+    warning: '#fbbf24',
+    error: '#f87171',
+    accent: '#f472b6',
+    grid: 'rgba(255, 255, 255, 0.05)',
+    text: '#94a3b8',
+    textLight: '#f1f5f9',
+    // Chart.js palette
+    palette: [
+        '#6366f1', '#22d3ee', '#f472b6', '#34d399', '#fbbf24',
+        '#f87171', '#8b5cf6', '#06b6d4', '#ec4899', '#84cc16'
+    ]
+};
+
 // Initialize Chart.js charts
 function initCharts() {
     // Model distribution chart (Doughnut)
@@ -163,18 +184,23 @@ function initCharts() {
             labels: ['无数据'],
             datasets: [{
                 data: [1],
-                backgroundColor: ['#334155'],
+                backgroundColor: ['rgba(100, 116, 139, 0.3)'],
+                borderWidth: 0,
             }]
         },
         options: {
             responsive: true,
             maintainAspectRatio: false,
+            cutout: '65%',
             plugins: {
                 legend: {
                     position: 'right',
                     labels: {
-                        color: '#e2e8f0',
-                        font: { size: 11 }
+                        color: chartColors.text,
+                        font: { size: 12, family: 'Inter' },
+                        padding: 16,
+                        usePointStyle: true,
+                        pointStyle: 'circle'
                     }
                 }
             }
@@ -191,18 +217,24 @@ function initCharts() {
                 {
                     label: '输入 Tokens',
                     data: [],
-                    borderColor: '#3b82f6',
-                    backgroundColor: 'rgba(59, 130, 246, 0.1)',
+                    borderColor: chartColors.primary,
+                    backgroundColor: chartColors.primaryLight,
                     fill: true,
                     tension: 0.4,
+                    borderWidth: 2,
+                    pointRadius: 0,
+                    pointHoverRadius: 4,
                 },
                 {
                     label: '输出 Tokens',
                     data: [],
-                    borderColor: '#22c55e',
-                    backgroundColor: 'rgba(34, 197, 94, 0.1)',
+                    borderColor: chartColors.secondary,
+                    backgroundColor: chartColors.secondaryLight,
                     fill: true,
                     tension: 0.4,
+                    borderWidth: 2,
+                    pointRadius: 0,
+                    pointHoverRadius: 4,
                 }
             ]
         },
@@ -211,18 +243,27 @@ function initCharts() {
             maintainAspectRatio: false,
             scales: {
                 x: {
-                    ticks: { color: '#94a3b8' },
-                    grid: { color: '#334155' }
+                    ticks: { color: chartColors.text, font: { size: 11 } },
+                    grid: { color: chartColors.grid }
                 },
                 y: {
-                    ticks: { color: '#94a3b8' },
-                    grid: { color: '#334155' }
+                    ticks: { color: chartColors.text, font: { size: 11 } },
+                    grid: { color: chartColors.grid }
                 }
             },
             plugins: {
                 legend: {
-                    labels: { color: '#e2e8f0' }
+                    labels: { 
+                        color: chartColors.textLight, 
+                        font: { size: 12, family: 'Inter' },
+                        usePointStyle: true,
+                        pointStyle: 'circle'
+                    }
                 }
+            },
+            interaction: {
+                intersect: false,
+                mode: 'index'
             }
         }
     });
@@ -239,16 +280,18 @@ function initCharts() {
                     {
                         label: '输入 Tokens (M)',
                         data: [],
-                        backgroundColor: 'rgba(59, 130, 246, 0.7)',
-                        borderColor: '#3b82f6',
+                        backgroundColor: 'rgba(99, 102, 241, 0.7)',
+                        borderColor: chartColors.primary,
                         borderWidth: 1,
+                        borderRadius: 4,
                     },
                     {
                         label: '输出 Tokens (M)',
                         data: [],
-                        backgroundColor: 'rgba(34, 197, 94, 0.7)',
-                        borderColor: '#22c55e',
+                        backgroundColor: 'rgba(34, 211, 238, 0.7)',
+                        borderColor: chartColors.secondary,
                         borderWidth: 1,
+                        borderRadius: 4,
                     }
                 ]
             },
@@ -257,20 +300,32 @@ function initCharts() {
                 maintainAspectRatio: false,
                 scales: {
                     x: {
-                        ticks: { color: '#94a3b8', maxRotation: 45 },
-                        grid: { color: '#334155' }
+                        ticks: { color: chartColors.text, maxRotation: 45, font: { size: 11 } },
+                        grid: { color: chartColors.grid }
                     },
                     y: {
-                        ticks: { color: '#94a3b8' },
-                        grid: { color: '#334155' },
+                        ticks: { color: chartColors.text, font: { size: 11 } },
+                        grid: { color: chartColors.grid },
                         beginAtZero: true
                     }
                 },
                 plugins: {
                     legend: {
-                        labels: { color: '#e2e8f0' }
+                        labels: { 
+                            color: chartColors.textLight, 
+                            font: { size: 12, family: 'Inter' },
+                            usePointStyle: true,
+                            pointStyle: 'rect'
+                        }
                     },
                     tooltip: {
+                        backgroundColor: 'rgba(15, 15, 26, 0.9)',
+                        titleColor: '#fff',
+                        bodyColor: chartColors.text,
+                        borderColor: 'rgba(255, 255, 255, 0.1)',
+                        borderWidth: 1,
+                        padding: 12,
+                        cornerRadius: 8,
                         callbacks: {
                             label: function(context) {
                                 return context.dataset.label + ': ' + context.raw.toFixed(2) + 'M';
@@ -295,12 +350,13 @@ function initCharts() {
                 datasets: [{
                     label: 'TPM',
                     data: [],
-                    borderColor: '#3b82f6',
-                    backgroundColor: 'rgba(59, 130, 246, 0.1)',
+                    borderColor: chartColors.primary,
+                    backgroundColor: chartColors.primaryLight,
                     fill: true,
-                    tension: 0.3,
+                    tension: 0.4,
                     pointRadius: 0,
-                    pointHoverRadius: 3,
+                    pointHoverRadius: 4,
+                    borderWidth: 2,
                 }]
             },
             options: {
@@ -308,26 +364,42 @@ function initCharts() {
                 maintainAspectRatio: false,
                 scales: {
                     x: {
-                        ticks: { color: '#94a3b8', maxRotation: 45, autoSkip: true, maxTicksLimit: 20 },
-                        grid: { color: '#334155' }
+                        ticks: { color: chartColors.text, maxRotation: 45, autoSkip: true, maxTicksLimit: 20, font: { size: 11 } },
+                        grid: { color: chartColors.grid }
                     },
                     y: {
-                        ticks: { color: '#94a3b8' },
-                        grid: { color: '#334155' },
+                        ticks: { color: chartColors.text, font: { size: 11 } },
+                        grid: { color: chartColors.grid },
                         beginAtZero: true
                     }
                 },
                 plugins: {
                     legend: {
-                        labels: { color: '#e2e8f0' }
+                        labels: { 
+                            color: chartColors.textLight, 
+                            font: { size: 12, family: 'Inter' },
+                            usePointStyle: true,
+                            pointStyle: 'circle'
+                        }
                     },
                     tooltip: {
+                        backgroundColor: 'rgba(15, 15, 26, 0.9)',
+                        titleColor: '#fff',
+                        bodyColor: chartColors.text,
+                        borderColor: 'rgba(255, 255, 255, 0.1)',
+                        borderWidth: 1,
+                        padding: 12,
+                        cornerRadius: 8,
                         callbacks: {
                             label: function(context) {
                                 return 'TPM: ' + formatNumber(context.raw);
                             }
                         }
                     }
+                },
+                interaction: {
+                    intersect: false,
+                    mode: 'index'
                 }
             }
         });
@@ -550,13 +622,11 @@ function updateDashboard(data) {
     document.getElementById('model-count').textContent =
         Object.keys(data.models?.distribution || {}).length;
 
-    // Update model chart - 带颜色
+    // Update model chart - 使用现代配色
     const modelDist = data.models?.distribution || {};
-    const colors = ['#3b82f6', '#22c55e', '#f59e0b', '#ef4444', '#8b5cf6',
-                    '#06b6d4', '#ec4899', '#84cc16', '#f97316', '#6366f1'];
     modelChart.data.labels = Object.keys(modelDist);
     modelChart.data.datasets[0].data = Object.values(modelDist);
-    modelChart.data.datasets[0].backgroundColor = colors.slice(0, Object.keys(modelDist).length);
+    modelChart.data.datasets[0].backgroundColor = chartColors.palette.slice(0, Object.keys(modelDist).length);
     modelChart.update();
 
     // Update last update time
