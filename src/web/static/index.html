@@ -146,8 +146,15 @@
                 <div class="card-header">
                     <h2>⚠️ 模型错误 <span id="error-count" class="error-badge"></span></h2>
                     <div class="filters">
-                        <input type="date" id="error-date-start" title="开始日期">
-                        <input type="date" id="error-date-end" title="结束日期">
+                        <select id="error-time-filter">
+                            <option value="">全部时间</option>
+                            <option value="today">今天</option>
+                            <option value="7">最近7天</option>
+                            <option value="30">最近30天</option>
+                            <option value="custom">自定义范围</option>
+                        </select>
+                        <input type="date" id="error-date-start" style="display:none" title="开始日期">
+                        <input type="date" id="error-date-end" style="display:none" title="结束日期">
                         <select id="error-agent-filter">
                             <option value="">全部 Agent</option>
                         </select>
@@ -162,8 +169,15 @@
                 <div class="card-header">
                     <h2>会话列表</h2>
                     <div class="filters">
-                        <input type="date" id="session-date-start" title="开始日期">
-                        <input type="date" id="session-date-end" title="结束日期">
+                        <select id="session-time-filter">
+                            <option value="">全部时间</option>
+                            <option value="today">今天</option>
+                            <option value="7">最近7天</option>
+                            <option value="30">最近30天</option>
+                            <option value="custom">自定义范围</option>
+                        </select>
+                        <input type="date" id="session-date-start" style="display:none" title="开始日期">
+                        <input type="date" id="session-date-end" style="display:none" title="结束日期">
                         <select id="status-filter">
                             <option value="">全部状态</option>
                             <option value="WORKING">运行中</option>

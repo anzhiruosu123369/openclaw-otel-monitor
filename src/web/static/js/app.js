@@ -21,11 +21,7 @@ let traceState = {
 // Initialize
 document.addEventListener('DOMContentLoaded', () => {
     initCharts();
-    // 设置默认日期为今天
-    setTodayDate('session-date-start');
-    setTodayDate('session-date-end');
-    setTodayDate('error-date-start');
-    setTodayDate('error-date-end');
+    // 不再设置默认日期，让筛选器默认显示所有数据
     fetchData();
     connectWebSocket();
     setupEventListeners();
@@ -47,11 +43,13 @@ function setupEventListeners() {
     document.getElementById('tpm-hours-filter').addEventListener('change', fetchTPMData);
     document.getElementById('tpm-agent-filter').addEventListener('change', fetchTPMData);
 
-    // 会话列表日期筛选
+    // 会话列表时间筛选
+    document.getElementById('session-time-filter').addEventListener('change', handleSessionTimeFilter);
     document.getElementById('session-date-start').addEventListener('change', fetchSessions);
     document.getElementById('session-date-end').addEventListener('change', fetchSessions);
 
-    // 模型错误日期筛选
+    // 模型错误时间筛选
+    document.getElementById('error-time-filter').addEventListener('change', handleErrorTimeFilter);
     document.getElementById('error-date-start').addEventListener('change', fetchErrors);
     document.getElementById('error-date-end').addEventListener('change', fetchErrors);
 }
@@ -60,6 +58,86 @@ function setupEventListeners() {
 function setTodayDate(elementId) {
     const today = new Date().toISOString().split('T')[0];
     document.getElementById(elementId).value = today;
+}
+
+// 处理会话时间筛选快捷选项
+function handleSessionTimeFilter() {
+    const timeFilter = document.getElementById('session-time-filter').value;
+    const dateStartInput = document.getElementById('session-date-start');
+    const dateEndInput = document.getElementById('session-date-end');
+    const today = new Date().toISOString().split('T')[0];
+
+    if (timeFilter === '') {
+        // 全部时间：清空日期并隐藏
+        dateStartInput.value = '';
+        dateEndInput.value = '';
+        dateStartInput.style.display = 'none';
+        dateEndInput.style.display = 'none';
+    } else if (timeFilter === 'today') {
+        // 今天：设置开始和结束为今天
+        dateStartInput.value = today;
+        dateEndInput.value = today;
+        dateStartInput.style.display = 'none';
+        dateEndInput.style.display = 'none';
+    } else if (timeFilter === 'custom') {
+        // 自定义范围：显示日期选择器
+        dateStartInput.style.display = 'inline-block';
+        dateEndInput.style.display = 'inline-block';
+        return; // 不自动触发筛选，等用户选择日期
+    } else {
+        // 最近N天：计算日期范围
+        const days = parseInt(timeFilter);
+        const endDate = new Date();
+        const startDate = new Date();
+        startDate.setDate(startDate.getDate() - days + 1);
+        
+        dateStartInput.value = startDate.toISOString().split('T')[0];
+        dateEndInput.value = endDate.toISOString().split('T')[0];
+        dateStartInput.style.display = 'none';
+        dateEndInput.style.display = 'none';
+    }
+
+    fetchSessions();
+}
+
+// 处理错误时间筛选快捷选项
+function handleErrorTimeFilter() {
+    const timeFilter = document.getElementById('error-time-filter').value;
+    const dateStartInput = document.getElementById('error-date-start');
+    const dateEndInput = document.getElementById('error-date-end');
+    const today = new Date().toISOString().split('T')[0];
+
+    if (timeFilter === '') {
+        // 全部时间：清空日期并隐藏
+        dateStartInput.value = '';
+        dateEndInput.value = '';
+        dateStartInput.style.display = 'none';
+        dateEndInput.style.display = 'none';
+    } else if (timeFilter === 'today') {
+        // 今天：设置开始和结束为今天
+        dateStartInput.value = today;
+        dateEndInput.value = today;
+        dateStartInput.style.display = 'none';
+        dateEndInput.style.display = 'none';
+    } else if (timeFilter === 'custom') {
+        // 自定义范围：显示日期选择器
+        dateStartInput.style.display = 'inline-block';
+        dateEndInput.style.display = 'inline-block';
+        return; // 不自动触发筛选，等用户选择日期
+    } else {
+        // 最近N天：计算日期范围
+        const days = parseInt(timeFilter);
+        const endDate = new Date();
+        const startDate = new Date();
+        startDate.setDate(startDate.getDate() - days + 1);
+        
+        dateStartInput.value = startDate.toISOString().split('T')[0];
+        dateEndInput.value = endDate.toISOString().split('T')[0];
+        dateStartInput.style.display = 'none';
+        dateEndInput.style.display = 'none';
+    }
+
+    fetchErrors();
 }
 
 // Debounce helper
@@ -309,10 +387,6 @@ function populateSessionFilters(sessions) {
     const sortedAgents = Array.from(agents).sort();
     agentFilter.innerHTML = '<option value="">全部 Agent</option>' +
         sortedAgents.map(a => `<option value="${a}">${a}</option>`).join('');
-
-    // 日期筛选默认不设置，让用户手动选择
-    // setTodayDate('session-date-start');
-    // setTodayDate('session-date-end');
 }
 
 // Populate TPM agent filter dropdowns
@@ -350,10 +424,6 @@ function populateErrorFilters(errors) {
     const sortedAgents = Array.from(agents).sort();
     agentFilter.innerHTML = '<option value="">全部 Agent</option>' +
         sortedAgents.map(a => `<option value="${a}">${a}</option>`).join('');
-
-    // 日期筛选默认不设置，让用户手动选择
-    // setTodayDate('error-date-start');
-    // setTodayDate('error-date-end');
 }
 
 // Fetch errors with filters
