@@ -433,6 +433,11 @@ header h1 {
 
 .chart-card {
     min-height: 320px;
+    max-height: 400px;  /* 防止图表无限增长 */
+}
+
+.chart-card canvas {
+    max-height: 300px;  /* 限制canvas高度 */
 }
 
 .chart-container {
