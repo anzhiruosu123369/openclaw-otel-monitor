@@ -831,12 +831,13 @@ function showAgentErrors(agentId) {
 function showSessionDetail(sessionKey) {
     if (!sessionKey) return;
 
-    // Reset trace state
+    // Reset trace state - 增加每次加载数量
     traceState = {
         sessionKey: sessionKey,
         events: [],
         offset: 0,
-        limit: 20,
+        limit: 50,  // 从 20 增加到 50
+        totalEvents: 0,  // 总事件数
         hasMore: true,
         isLoading: false
     };
@@ -862,7 +863,7 @@ function showSessionDetail(sessionKey) {
 
                 <div class="session-tabs-fixed">
                     <button class="tab-btn active" onclick="switchTab('overview', this)">概览</button>
-                    <button class="tab-btn" onclick="switchTab('trace', this)">Trace</button>
+                    <button class="tab-btn" id="trace-tab-btn" onclick="switchTab('trace', this)">Trace (加载中...)</button>
                     <button class="tab-btn" onclick="switchTab('tokens', this)">Token</button>
                 </div>
 
@@ -872,12 +873,17 @@ function showSessionDetail(sessionKey) {
                     </div>
 
                     <div id="tab-trace" class="tab-content">
+                        <div class="trace-info-bar" id="trace-info-bar">
+                            <span class="trace-loaded-count">已加载: 0</span>
+                            <span class="trace-total-count">总数: ?</span>
+                            <span class="trace-scroll-hint">↓ 滚动加载更多</span>
+                        </div>
                         <div class="trace-timeline" id="trace-timeline"></div>
                         <div id="trace-loading" class="trace-loading" style="display: none;">
                             <span class="loading-spinner"></span> 正在加载中...
                         </div>
                         <div id="trace-end" class="trace-end" style="display: none;">
-                            没有更多数据了
+                            已加载全部数据
                         </div>
                     </div>
 
@@ -946,9 +952,15 @@ function loadMoreTraceData() {
             traceState.isLoading = false;
             showTraceLoading(false);
 
+            // 更新总事件数
+            if (trace.event_count !== undefined) {
+                traceState.totalEvents = trace.event_count;
+            }
+
             if (!trace.events || trace.events.length === 0) {
                 traceState.hasMore = false;
                 showTraceEnd(true);
+                updateTraceInfo();
                 return;
             }
 
@@ -966,13 +978,13 @@ function loadMoreTraceData() {
             traceState.offset += trace.events.length;
 
             // Check if we've loaded all data
-            if (trace.events.length < traceState.limit) {
+            if (trace.events.length < traceState.limit || traceState.offset >= traceState.totalEvents) {
                 traceState.hasMore = false;
                 showTraceEnd(true);
             }
 
-            // Update trace tab button count
-            updateTraceTabCount();
+            // Update trace info display
+            updateTraceInfo();
         })
         .catch(err => {
             console.error('Failed to load trace:', err);
@@ -997,11 +1009,29 @@ function showTraceEnd(show) {
     }
 }
 
-// Update trace tab button count
-function updateTraceTabCount() {
-    const traceBtn = document.querySelector('.session-tabs-fixed .tab-btn:nth-child(2)');
+// Update trace info display
+function updateTraceInfo() {
+    // 更新标签按钮
+    const traceBtn = document.getElementById('trace-tab-btn');
     if (traceBtn) {
-        traceBtn.textContent = `Trace (${traceState.offset})`;
+        const total = traceState.totalEvents || '?';
+        traceBtn.textContent = `Trace (${traceState.offset}/${total})`;
+    }
+
+    // 更新信息栏
+    const loadedSpan = document.querySelector('.trace-loaded-count');
+    const totalSpan = document.querySelector('.trace-total-count');
+    const hintSpan = document.querySelector('.trace-scroll-hint');
+
+    if (loadedSpan) {
+        loadedSpan.textContent = `已加载: ${traceState.offset}`;
+    }
+    if (totalSpan) {
+        totalSpan.textContent = `总数: ${traceState.totalEvents || '?'}`;
+    }
+    if (hintSpan) {
+        // 如果已加载全部，隐藏滚动提示
+        hintSpan.style.display = traceState.hasMore ? 'inline' : 'none';
     }
 }
 

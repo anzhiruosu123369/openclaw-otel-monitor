@@ -978,6 +978,35 @@ footer {
     gap: 12px;
 }
 
+/* Trace info bar */
+.trace-info-bar {
+    display: flex;
+    gap: 16px;
+    padding: 8px 12px;
+    background: rgba(99, 102, 241, 0.1);
+    border-radius: 8px;
+    margin-bottom: 12px;
+    font-size: 13px;
+    color: var(--text-muted);
+}
+
+.trace-info-bar .trace-loaded-count {
+    color: var(--primary);
+    font-weight: 500;
+}
+
+.trace-info-bar .trace-scroll-hint {
+    margin-left: auto;
+    color: var(--secondary);
+    font-size: 12px;
+    animation: bounce 1s ease-in-out infinite;
+}
+
+@keyframes bounce {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-3px); }
+}
+
 .trace-loading {
     text-align: center;
     padding: 24px;
