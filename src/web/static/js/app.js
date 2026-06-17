@@ -259,24 +259,34 @@ function initCharts() {
 // Fetch all data
 async function fetchData() {
     try {
+        // 读取 TPM 筛选器的当前值
+        const tpmHours = document.getElementById('tpm-hours-filter')?.value || 168;
+        const tpmAgent = document.getElementById('tpm-agent-filter')?.value || '';
+        
+        let tpmUrl = `/api/tpm?hours=${tpmHours}`;
+        if (tpmAgent) {
+            tpmUrl += `&agent_id=${encodeURIComponent(tpmAgent)}`;
+        }
+        
         const [dashboard, sessions, models, tokens, errors, tpm] = await Promise.all([
             fetchAPI('/api/dashboard'),
             fetchAPI('/api/sessions?limit=50'),
             fetchAPI('/api/models/stats'),
             fetchAPI('/api/tokens/histogram?hours=24'),
             fetchAPI('/api/errors?limit=50&group_by=agent'),
-            fetchAPI('/api/tpm?hours=24')  // 获取 TPM 数据
+            fetchAPI(tpmUrl)
         ]);
 
         dashboardData = dashboard;
         updateDashboard(dashboard);
         updateSessionsTable(sessions);
         populateSessionFilters(sessions);
+        populateTPMAgentFilter(sessions);  // 填充 TPM Agent 筛选器
         updateModelsTable(models);
         updateTokenChart(tokens);
         updateErrorsTable(errors);
         populateErrorFilters(errors);
-        updateTPMStats(tpm);  // 更新 TPM 统计
+        updateTPMStats(tpm);
     } catch (error) {
         console.error('Fetch error:', error);
     }
@@ -303,6 +313,25 @@ function populateSessionFilters(sessions) {
     // 日期筛选默认不设置，让用户手动选择
     // setTodayDate('session-date-start');
     // setTodayDate('session-date-end');
+}
+
+// Populate TPM agent filter dropdowns
+function populateTPMAgentFilter(sessions) {
+    const agentFilter = document.getElementById('tpm-agent-filter');
+
+    // Get unique agents
+    const agents = new Set();
+
+    sessions.forEach(s => {
+        if (s.agent_id) {
+            agents.add(s.agent_id);
+        }
+    });
+
+    // Populate agent filter
+    const sortedAgents = Array.from(agents).sort();
+    agentFilter.innerHTML = '<option value="">全部 Agent</option>' +
+        sortedAgents.map(a => `<option value="${a}">${a}</option>`).join('');
 }
 
 // Populate error filter dropdowns

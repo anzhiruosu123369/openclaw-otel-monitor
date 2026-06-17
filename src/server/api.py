@@ -148,8 +148,9 @@ async def api_session_trace(session_key: str, offset: int = 0, limit: int = 50):
             if cached_result:
                 all_events = cached_result['events']
                 total_events = cached_result['total']
-                # Apply pagination on cached data
-                events = all_events[offset:offset + limit]
+                # Process events for display and apply pagination
+                processed_events = [process_event_for_display(e) for e in all_events]
+                events = processed_events[offset:offset + limit]
         else:
             # Fallback: stream parse with early termination
             jsonl_path = None
@@ -229,24 +230,38 @@ def process_event_for_display(event: Dict) -> Dict:
         tool_calls = []
         tool_results = []
 
-        if isinstance(content, list):
+        # Handle toolResult role - tool result info is at message level
+        if role == "toolResult":
+            # Extract tool result from message-level fields
+            tool_results.append({
+                "tool_use_id": msg.get("toolCallId", ""),
+                "tool_name": msg.get("toolName", ""),
+                "content": content if isinstance(content, str) else 
+                           "\n".join([item.get("text", "") for item in content 
+                                     if isinstance(item, dict) and item.get("type") == "text"]),
+                "is_error": msg.get("isError", False)
+            })
+        elif isinstance(content, list):
             texts = []
             for item in content:
-                if isinstance(item, dict) and item.get("type") == "text":
-                    texts.append(item.get("text", ""))
-                elif isinstance(item, dict) and item.get("type") == "tool_use":
-                    # Extract tool call info
-                    tool_calls.append({
-                        "id": item.get("id"),
-                        "name": item.get("name", "unknown"),
-                        "input": item.get("input", {})
-                    })
-                elif isinstance(item, dict) and item.get("type") == "tool_result":
-                    tool_results.append({
-                        "tool_use_id": item.get("tool_use_id"),
-                        "content": item.get("content", ""),
-                        "status": item.get("status", "success")
-                    })
+                if isinstance(item, dict):
+                    item_type = item.get("type", "")
+                    if item_type == "text":
+                        texts.append(item.get("text", ""))
+                    elif item_type in ("tool_use", "toolCall"):
+                        # Extract tool call info (support both formats)
+                        tool_calls.append({
+                            "id": item.get("id"),
+                            "name": item.get("name", "unknown"),
+                            "input": item.get("input") or item.get("arguments", {})
+                        })
+                    elif item_type in ("tool_result", "toolResult"):
+                        # Extract tool result info (support both formats)
+                        tool_results.append({
+                            "tool_use_id": item.get("tool_use_id") or item.get("toolCallId", ""),
+                            "content": item.get("content", ""),
+                            "status": item.get("status", "success")
+                        })
                 elif isinstance(item, str):
                     texts.append(item)
             content = "\n".join(texts)
@@ -259,6 +274,15 @@ def process_event_for_display(event: Dict) -> Dict:
         result["stop_reason"] = msg.get("stopReason")
         result["tool_calls"] = tool_calls
         result["tool_results"] = tool_results
+        
+        # Handle toolResult role - extract from message top-level fields
+        if role == "toolResult":
+            result["tool_results"] = [{
+                "tool_use_id": msg.get("toolCallId", ""),
+                "tool_name": msg.get("toolName", ""),
+                "content": content,
+                "status": "error" if msg.get("isError") else "success"
+            }]
 
         # Token usage
         usage = msg.get("usage", {})
