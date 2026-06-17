@@ -1,0 +1,22 @@
+# Default configuration for OpenClaw OTel Monitor
+
+[server]
+host = "127.0.0.1"
+port = 8080
+
+[openclaw]
+gateway_host = "127.0.0.1"
+gateway_port = 18789
+openclaw_root = "~/.openclaw"
+
+[collector]
+session_scan_interval = 5  # seconds
+health_check_interval = 10  # seconds
+
+[storage]
+metrics_db = "~/.local/share/openclaw-otel-monitor/metrics.db"
+retention_days = 7
+
+[logging]
+level = "INFO"
+format = "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
