@@ -4,7 +4,6 @@
 let ws = null;
 let dashboardData = {};
 let modelChart = null;
-let tokenChart = null;
 let tokenDailyChart = null;
 let tpmChart = null;
 
@@ -21,13 +20,34 @@ let traceState = {
 // Initialize
 document.addEventListener('DOMContentLoaded', () => {
     initCharts();
-    // 不再设置默认日期，让筛选器默认显示所有数据
     fetchData();
     connectWebSocket();
     setupEventListeners();
     // 加载 token daily 数据
-    fetchTokenDailyData(30);
+    fetchTokenDailyData(7);
+    
+    // 设置默认筛选为"今天"
+    setDefaultTimeFilters();
 });
+
+// 设置默认时间筛选为今天
+function setDefaultTimeFilters() {
+    const today = new Date().toISOString().split('T')[0];
+    
+    // 会话列表筛选 - 设置今天
+    const sessionTimeFilter = document.getElementById('session-time-filter');
+    if (sessionTimeFilter && sessionTimeFilter.value === 'today') {
+        document.getElementById('session-date-start').value = today;
+        document.getElementById('session-date-end').value = today;
+    }
+    
+    // 模型错误筛选 - 设置今天
+    const errorTimeFilter = document.getElementById('error-time-filter');
+    if (errorTimeFilter && errorTimeFilter.value === 'today') {
+        document.getElementById('error-date-start').value = today;
+        document.getElementById('error-date-end').value = today;
+    }
+}
 
 // Setup event listeners
 function setupEventListeners() {
@@ -41,7 +61,6 @@ function setupEventListeners() {
 
     // TPM 筛选器
     document.getElementById('tpm-hours-filter').addEventListener('change', fetchTPMData);
-    document.getElementById('tpm-agent-filter').addEventListener('change', fetchTPMData);
 
     // 会话列表时间筛选
     document.getElementById('session-time-filter').addEventListener('change', handleSessionTimeFilter);
@@ -207,68 +226,7 @@ function initCharts() {
         }
     });
 
-    // Token usage chart (Line)
-    const tokenCtx = document.getElementById('token-chart').getContext('2d');
-    tokenChart = new Chart(tokenCtx, {
-        type: 'line',
-        data: {
-            labels: [],
-            datasets: [
-                {
-                    label: '输入 Tokens',
-                    data: [],
-                    borderColor: chartColors.primary,
-                    backgroundColor: chartColors.primaryLight,
-                    fill: true,
-                    tension: 0.4,
-                    borderWidth: 2,
-                    pointRadius: 0,
-                    pointHoverRadius: 4,
-                },
-                {
-                    label: '输出 Tokens',
-                    data: [],
-                    borderColor: chartColors.secondary,
-                    backgroundColor: chartColors.secondaryLight,
-                    fill: true,
-                    tension: 0.4,
-                    borderWidth: 2,
-                    pointRadius: 0,
-                    pointHoverRadius: 4,
-                }
-            ]
-        },
-        options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            scales: {
-                x: {
-                    ticks: { color: chartColors.text, font: { size: 11 } },
-                    grid: { color: chartColors.grid }
-                },
-                y: {
-                    ticks: { color: chartColors.text, font: { size: 11 } },
-                    grid: { color: chartColors.grid }
-                }
-            },
-            plugins: {
-                legend: {
-                    labels: { 
-                        color: chartColors.textLight, 
-                        font: { size: 12, family: 'Inter' },
-                        usePointStyle: true,
-                        pointStyle: 'circle'
-                    }
-                }
-            },
-            interaction: {
-                intersect: false,
-                mode: 'index'
-            }
-        }
-    });
-
-    // Token daily chart (Bar)
+    // Token daily chart (Bar) - supports both hourly and daily data
     const tokenDailyCanvas = document.getElementById('token-daily-chart');
     if (tokenDailyCanvas) {
         const tokenDailyCtx = tokenDailyCanvas.getContext('2d');
@@ -278,7 +236,7 @@ function initCharts() {
                 labels: [],
                 datasets: [
                     {
-                        label: '输入 Tokens (M)',
+                        label: '输入 Tokens',
                         data: [],
                         backgroundColor: 'rgba(99, 102, 241, 0.7)',
                         borderColor: chartColors.primary,
@@ -286,7 +244,7 @@ function initCharts() {
                         borderRadius: 4,
                     },
                     {
-                        label: '输出 Tokens (M)',
+                        label: '输出 Tokens',
                         data: [],
                         backgroundColor: 'rgba(34, 211, 238, 0.7)',
                         borderColor: chartColors.secondary,
@@ -328,7 +286,13 @@ function initCharts() {
                         cornerRadius: 8,
                         callbacks: {
                             label: function(context) {
-                                return context.dataset.label + ': ' + context.raw.toFixed(2) + 'M';
+                                const value = context.raw;
+                                if (value >= 1000000) {
+                                    return context.dataset.label + ': ' + (value / 1000000).toFixed(2) + 'M';
+                                } else if (value >= 1000) {
+                                    return context.dataset.label + ': ' + (value / 1000).toFixed(1) + 'K';
+                                }
+                                return context.dataset.label + ': ' + value;
                             }
                         }
                     }
@@ -409,34 +373,35 @@ function initCharts() {
 // Fetch all data
 async function fetchData() {
     try {
-        // 读取 TPM 筛选器的当前值
-        const tpmHours = document.getElementById('tpm-hours-filter')?.value || 168;
-        const tpmAgent = document.getElementById('tpm-agent-filter')?.value || '';
+        const tpmHours = document.getElementById('tpm-hours-filter')?.value || 24;
         
-        let tpmUrl = `/api/tpm?hours=${tpmHours}`;
-        if (tpmAgent) {
-            tpmUrl += `&agent_id=${encodeURIComponent(tpmAgent)}`;
-        }
-        
-        const [dashboard, sessions, models, tokens, errors, tpm] = await Promise.all([
+        const [dashboard, sessions, models, errors, tpm] = await Promise.all([
             fetchAPI('/api/dashboard'),
             fetchAPI('/api/sessions?limit=50'),
             fetchAPI('/api/models/stats'),
-            fetchAPI('/api/tokens/histogram?hours=24'),
             fetchAPI('/api/errors?limit=50&group_by=agent'),
-            fetchAPI(tpmUrl)
+            fetchAPI(`/api/tpm?hours=${tpmHours}`)
         ]);
 
         dashboardData = dashboard;
         updateDashboard(dashboard);
         updateSessionsTable(sessions);
         populateSessionFilters(sessions);
-        populateTPMAgentFilter(sessions);  // 填充 TPM Agent 筛选器
         updateModelsTable(models);
-        updateTokenChart(tokens);
         updateErrorsTable(errors);
         populateErrorFilters(errors);
         updateTPMStats(tpm);
+        
+        // 应用默认的"今天"筛选
+        const today = new Date().toISOString().split('T')[0];
+        document.getElementById('session-date-start').value = today;
+        document.getElementById('session-date-end').value = today;
+        document.getElementById('error-date-start').value = today;
+        document.getElementById('error-date-end').value = today;
+        
+        // 触发筛选
+        fetchSessions();
+        fetchErrors();
     } catch (error) {
         console.error('Fetch error:', error);
     }
@@ -445,25 +410,6 @@ async function fetchData() {
 // Populate session filter dropdowns
 function populateSessionFilters(sessions) {
     const agentFilter = document.getElementById('session-agent-filter');
-
-    // Get unique agents
-    const agents = new Set();
-
-    sessions.forEach(s => {
-        if (s.agent_id) {
-            agents.add(s.agent_id);
-        }
-    });
-
-    // Populate agent filter
-    const sortedAgents = Array.from(agents).sort();
-    agentFilter.innerHTML = '<option value="">全部 Agent</option>' +
-        sortedAgents.map(a => `<option value="${a}">${a}</option>`).join('');
-}
-
-// Populate TPM agent filter dropdowns
-function populateTPMAgentFilter(sessions) {
-    const agentFilter = document.getElementById('tpm-agent-filter');
 
     // Get unique agents
     const agents = new Set();
@@ -674,20 +620,6 @@ function updateModelsTable(models) {
             <td>${m.total_errors || 0}</td>
         </tr>
     `).join('');
-}
-
-// Update token chart
-function updateTokenChart(data) {
-    if (!data || data.length === 0) return;
-
-    const labels = data.map(d => d.hour?.split(' ')[1] || d.hour);
-    const inputData = data.map(d => d.input_tokens || 0);
-    const outputData = data.map(d => d.output_tokens || 0);
-
-    tokenChart.data.labels = labels;
-    tokenChart.data.datasets[0].data = inputData;
-    tokenChart.data.datasets[1].data = outputData;
-    tokenChart.update();
 }
 
 // Update errors table with grouping
@@ -1454,55 +1386,96 @@ function updateTokenDailyChart(data) {
         return;
     }
 
-    // Aggregate by date
-    const dateMap = new Map();
+    // Check if this is hourly data (has 'hour' field) or daily data (has 'date' field)
+    const isHourly = data[0] && data[0].hour !== undefined;
+    
+    let labels = [];
+    let inputData = [];
+    let outputData = [];
     let totalInput = 0;
     let totalOutput = 0;
     let totalCalls = 0;
 
-    data.forEach(item => {
-        const date = item.date;
-        if (!dateMap.has(date)) {
-            dateMap.set(date, { input: 0, output: 0, calls: 0 });
+    if (isHourly) {
+        // Hourly data for 24h view
+        const hourMap = new Map();
+        
+        data.forEach(item => {
+            const hour = item.hour;
+            if (!hourMap.has(hour)) {
+                hourMap.set(hour, { input: 0, output: 0, calls: 0 });
+            }
+            const agg = hourMap.get(hour);
+            agg.input += item.input_tokens || 0;
+            agg.output += item.output_tokens || 0;
+            agg.calls += item.calls || 0;
+            totalInput += item.input_tokens || 0;
+            totalOutput += item.output_tokens || 0;
+            totalCalls += item.calls || 0;
+        });
+
+        // Generate continuous 24-hour range
+        const now = new Date();
+        for (let i = 23; i >= 0; i--) {
+            const hourDate = new Date(now.getTime() - i * 60 * 60 * 1000);
+            const hourKey = hourDate.toISOString().slice(0, 13) + ':00';
+            const label = hourDate.getHours().toString().padStart(2, '0') + ':00';
+            labels.push(label);
+            
+            const agg = hourMap.get(hourKey);
+            if (agg) {
+                inputData.push(agg.input / 1000);
+                outputData.push(agg.output / 1000);
+            } else {
+                inputData.push(0);
+                outputData.push(0);
+            }
         }
-        const agg = dateMap.get(date);
-        agg.input += item.input_tokens || 0;
-        agg.output += item.output_tokens || 0;
-        agg.calls += item.calls || 0;
-        totalInput += item.input_tokens || 0;
-        totalOutput += item.output_tokens || 0;
-        totalCalls += item.calls || 0;
-    });
+    } else {
+        // Daily data
+        const dateMap = new Map();
+        
+        data.forEach(item => {
+            const date = item.date;
+            if (!dateMap.has(date)) {
+                dateMap.set(date, { input: 0, output: 0, calls: 0 });
+            }
+            const agg = dateMap.get(date);
+            agg.input += item.input_tokens || 0;
+            agg.output += item.output_tokens || 0;
+            agg.calls += item.calls || 0;
+            totalInput += item.input_tokens || 0;
+            totalOutput += item.output_tokens || 0;
+            totalCalls += item.calls || 0;
+        });
 
-    // 生成连续日期范围
-    const sortedDates = Array.from(dateMap.keys()).sort();
-    const startDate = new Date(sortedDates[0]);
-    const endDate = new Date(sortedDates[sortedDates.length - 1]);
+        // Generate continuous date range
+        const sortedDates = Array.from(dateMap.keys()).sort();
+        const startDate = new Date(sortedDates[0]);
+        const endDate = new Date(sortedDates[sortedDates.length - 1]);
 
-    // 创建连续日期数组
-    const continuousDates = [];
-    const currentDate = new Date(startDate);
-    while (currentDate <= endDate) {
-        continuousDates.push(currentDate.toISOString().split('T')[0]);
-        currentDate.setDate(currentDate.getDate() + 1);
+        const continuousDates = [];
+        const currentDate = new Date(startDate);
+        while (currentDate <= endDate) {
+            continuousDates.push(currentDate.toISOString().split('T')[0]);
+            currentDate.setDate(currentDate.getDate() + 1);
+        }
+
+        labels = continuousDates;
+        continuousDates.forEach(date => {
+            const agg = dateMap.get(date);
+            if (agg) {
+                inputData.push(agg.input / 1000000);
+                outputData.push(agg.output / 1000000);
+            } else {
+                inputData.push(0);
+                outputData.push(0);
+            }
+        });
     }
 
-    // 为每个日期填充数据
-    const inputData = [];
-    const outputData = [];
-    continuousDates.forEach(date => {
-        const agg = dateMap.get(date);
-        if (agg) {
-            inputData.push(agg.input / 1000000);
-            outputData.push(agg.output / 1000000);
-        } else {
-            inputData.push(0);
-            outputData.push(0);
-        }
-    });
-
     // Update chart
-    tokenDailyChart.data.labels = continuousDates;
+    tokenDailyChart.data.labels = labels;
     tokenDailyChart.data.datasets[0].data = inputData;
     tokenDailyChart.data.datasets[1].data = outputData;
     tokenDailyChart.update();
@@ -1548,15 +1521,9 @@ function updateTPMStats(tpm) {
 // Fetch TPM data with filters
 async function fetchTPMData() {
     const hours = document.getElementById('tpm-hours-filter').value;
-    const agentFilter = document.getElementById('tpm-agent-filter').value;
 
     try {
-        let url = `/api/tpm?hours=${hours}`;
-        if (agentFilter) {
-            url += `&agent_id=${encodeURIComponent(agentFilter)}`;
-        }
-
-        const tpm = await fetchAPI(url);
+        const tpm = await fetchAPI(`/api/tpm?hours=${hours}`);
         updateTPMStats(tpm);
     } catch (error) {
         console.error('Fetch TPM error:', error);

@@ -1,0 +1,18 @@
+[Unit]
+Description=OpenClaw OTel Monitor Service
+After=network.target
+
+[Service]
+Type=simple
+User=xiatao16954
+Group=xiatao16954
+WorkingDirectory=/home/xiatao16954/program/openclaw-otel-monitor
+Environment=PATH=/home/xiatao16954/program/openclaw-otel-monitor/venv/bin:/usr/local/bin:/usr/bin:/bin
+ExecStart=/home/xiatao16954/program/openclaw-otel-monitor/venv/bin/python run.py
+Restart=always
+RestartSec=5
+StandardOutput=append:/home/xiatao16954/program/openclaw-otel-monitor/otel-monitor.log
+StandardError=append:/home/xiatao16954/program/openclaw-otel-monitor/otel-monitor.log
+
+[Install]
+WantedBy=multi-user.target

@@ -522,9 +522,21 @@ async def api_tokens_histogram(hours: int = 24):
 
 @router.get("/tokens/daily")
 async def api_tokens_daily(days: int = 30):
-    """Get token usage aggregated by day."""
+    """Get token usage aggregated by day or hour.
+    
+    Args:
+        days: Time range in days. Special case: days=1 returns hourly data for last 24h.
+    
+    Returns:
+        For days=1: hourly aggregated data (last 24 hours)
+        For days>1: daily aggregated data
+    """
     if _store:
-        return _store.get_token_usage_daily(days=days)
+        if days == 1:
+            # Return hourly data for last 24 hours
+            return _store.get_token_usage_timeseries(hours=24)
+        else:
+            return _store.get_token_usage_daily(days=days)
     return []
 
 

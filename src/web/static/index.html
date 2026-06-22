@@ -70,13 +70,10 @@
                             <option value="1">最近 1 小时</option>
                             <option value="6">最近 6 小时</option>
                             <option value="12">最近 12 小时</option>
-                            <option value="24">最近 24 小时</option>
+                            <option value="24" selected>最近 24 小时</option>
                             <option value="48">最近 48 小时</option>
-                            <option value="168" selected>最近 7 天</option>
+                            <option value="168">最近 7 天</option>
                             <option value="720">最近 30 天</option>
-                        </select>
-                        <select id="tpm-agent-filter">
-                            <option value="">全部 Agent</option>
                         </select>
                     </div>
                 </div>
@@ -108,21 +105,18 @@
                     <h3>模型调用分布</h3>
                     <canvas id="model-chart"></canvas>
                 </div>
-                <div class="card chart-card">
-                    <h3>Token 使用趋势 (24h)</h3>
-                    <canvas id="token-chart"></canvas>
-                </div>
             </section>
 
-            <!-- Token Daily Chart -->
+            <!-- Token Time Distribution Chart -->
             <section class="card">
                 <div class="card-header">
                     <h2>📊 Token 时间分布</h2>
                     <div class="filters">
                         <select id="token-days-filter">
-                            <option value="7">最近 7 天</option>
+                            <option value="1">最近 24 小时</option>
+                            <option value="7" selected>最近 7 天</option>
                             <option value="14">最近 14 天</option>
-                            <option value="30" selected>最近 30 天</option>
+                            <option value="30">最近 30 天</option>
                             <option value="60">最近 60 天</option>
                             <option value="90">最近 90 天</option>
                         </select>
@@ -154,7 +148,7 @@
                     <div class="filters">
                         <select id="error-time-filter">
                             <option value="">全部时间</option>
-                            <option value="today">今天</option>
+                            <option value="today" selected>今天</option>
                             <option value="7">最近7天</option>
                             <option value="30">最近30天</option>
                             <option value="custom">自定义范围</option>
@@ -177,7 +171,7 @@
                     <div class="filters">
                         <select id="session-time-filter">
                             <option value="">全部时间</option>
-                            <option value="today">今天</option>
+                            <option value="today" selected>今天</option>
                             <option value="7">最近7天</option>
                             <option value="30">最近30天</option>
                             <option value="custom">自定义范围</option>
@@ -278,6 +272,6 @@
         </footer>
     </div>
 
-    <script src="/static/js/app.js?v=6"></script>
+    <script src="/static/js/app.js?v=10"></script>
 </body>
 </html>

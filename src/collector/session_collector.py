@@ -180,19 +180,36 @@ class SessionCollector:
                 elif role == "assistant":
                     last_assistant_msg = content[:200] if content else None
 
-                    # 解析 token 使用
+                    # 解析 token 使用 - prefer totalTokens for accuracy
                     usage = msg.get("usage", {})
                     if usage:
+                        # Use totalTokens if available (includes cacheRead)
+                        total_tokens = usage.get("totalTokens", 0)
+                        
+                        # Also extract input/output for detailed tracking
                         input_tokens = usage.get("input", 0) or usage.get("prompt_tokens", 0)
                         output_tokens = usage.get("output", 0) or usage.get("completion_tokens", 0)
+                        cache_read = usage.get("cacheRead", 0)
+                        cache_write = usage.get("cacheWrite", 0)
+                        
+                        # If no totalTokens, calculate from input + output
+                        if not total_tokens:
+                            total_tokens = input_tokens + output_tokens
+                        
+                        # Accumulate totals (use input + output for session stats)
+                        # This represents actual new tokens processed (excluding cache)
                         state.total_input_tokens += input_tokens
                         state.total_output_tokens += output_tokens
-                        if input_tokens > 0 or output_tokens > 0:
+                        
+                        if total_tokens > 0:
                             state.token_usage.append({
                                 "model": msg.get("model", state.last_model or "unknown"),
                                 "provider": msg.get("provider", state.last_provider or "unknown"),
                                 "input_tokens": input_tokens,
                                 "output_tokens": output_tokens,
+                                "cache_read": cache_read,
+                                "cache_write": cache_write,
+                                "total_tokens": total_tokens,
                                 "timestamp": event.get("timestamp"),
                             })
 
@@ -454,20 +471,25 @@ class SessionCollector:
                     message = event.get('message', {})
                     usage = message.get('usage', {})
                     
-                    # Try multiple possible field names for tokens
-                    input_tokens = (
-                        usage.get('input', 0) or 
-                        usage.get('inputTokens', 0) or 
-                        message.get('inputTokens', 0) or 
-                        0
-                    )
-                    output_tokens = (
-                        usage.get('output', 0) or 
-                        usage.get('outputTokens', 0) or 
-                        message.get('outputTokens', 0) or 
-                        0
-                    )
-                    total_tokens = input_tokens + output_tokens
+                    # Prefer totalTokens if available, otherwise calculate from input + output
+                    # totalTokens is more accurate as it includes cacheRead tokens
+                    total_tokens = usage.get('totalTokens', 0)
+                    
+                    if not total_tokens:
+                        # Fallback: calculate from input + output
+                        input_tokens = (
+                            usage.get('input', 0) or 
+                            usage.get('inputTokens', 0) or 
+                            message.get('inputTokens', 0) or 
+                            0
+                        )
+                        output_tokens = (
+                            usage.get('output', 0) or 
+                            usage.get('outputTokens', 0) or 
+                            message.get('outputTokens', 0) or 
+                            0
+                        )
+                        total_tokens = input_tokens + output_tokens
                     
                     if total_tokens > 0:
                         token_events.append({
