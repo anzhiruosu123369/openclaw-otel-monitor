@@ -426,7 +426,7 @@ header h1 {
 /* Charts Row */
 .charts-row {
     display: grid;
-    grid-template-columns: repeat(2, 1fr);
+    grid-template-columns: 1fr;
     gap: 24px;
     margin-bottom: 24px;
 }
