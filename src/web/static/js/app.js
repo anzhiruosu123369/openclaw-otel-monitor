@@ -61,6 +61,7 @@ function setupEventListeners() {
 
     // TPM 筛选器
     document.getElementById('tpm-hours-filter').addEventListener('change', fetchTPMData);
+    document.getElementById('tpm-agent-filter').addEventListener('change', fetchTPMData);
     document.getElementById('tpm-metric-filter').addEventListener('change', () => {
         updateTPMMetricDesc();
         updateTPMDisplay();
@@ -414,6 +415,7 @@ async function fetchData() {
 // Populate session filter dropdowns
 function populateSessionFilters(sessions) {
     const agentFilter = document.getElementById('session-agent-filter');
+    const tpmAgentFilter = document.getElementById('tpm-agent-filter');
 
     // Get unique agents
     const agents = new Set();
@@ -426,8 +428,11 @@ function populateSessionFilters(sessions) {
 
     // Populate agent filter
     const sortedAgents = Array.from(agents).sort();
-    agentFilter.innerHTML = '<option value="">全部 Agent</option>' +
+    const agentOptions = '<option value="">全部 Agent</option>' +
         sortedAgents.map(a => `<option value="${a}">${a}</option>`).join('');
+    
+    agentFilter.innerHTML = agentOptions;
+    tpmAgentFilter.innerHTML = agentOptions;
 }
 
 // Populate error filter dropdowns
@@ -1504,9 +1509,14 @@ function updateTPMStats(tpm) {
 // Fetch TPM data with filters
 async function fetchTPMData() {
     const hours = document.getElementById('tpm-hours-filter').value;
+    const agentId = document.getElementById('tpm-agent-filter').value;
 
     try {
-        const tpm = await fetchAPI(`/api/tpm?hours=${hours}`);
+        let url = `/api/tpm?hours=${hours}`;
+        if (agentId) {
+            url += `&agent_id=${encodeURIComponent(agentId)}`;
+        }
+        const tpm = await fetchAPI(url);
         window.tpmData = tpm;  // Store globally for metric switching
         updateTPMMetricDesc();
         updateTPMDisplay();
