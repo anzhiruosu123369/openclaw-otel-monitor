@@ -75,7 +75,14 @@
                             <option value="168">最近 7 天</option>
                             <option value="720">最近 30 天</option>
                         </select>
+                        <select id="tpm-metric-filter">
+                            <option value="rate_limit">限流 TPM (input+output)</option>
+                            <option value="actual">实际消耗 TPM (含缓存)</option>
+                        </select>
                     </div>
+                </div>
+                <div class="tpm-stats-info" style="margin-bottom: 15px; padding: 10px; background: rgba(255,255,255,0.05); border-radius: 8px; font-size: 13px; color: var(--text-muted);">
+                    <span id="tpm-metric-desc">限流 TPM = 新处理 tokens (input + output)，用于对齐提供商 TPM 限额</span>
                 </div>
                 <div class="tpm-stats-grid">
                     <div class="tpm-stat-item">
@@ -272,6 +279,6 @@
         </footer>
     </div>
 
-    <script src="/static/js/app.js?v=11"></script>
+    <script src="/static/js/app.js?v=12"></script>
 </body>
 </html>

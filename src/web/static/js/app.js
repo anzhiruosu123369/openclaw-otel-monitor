@@ -61,6 +61,10 @@ function setupEventListeners() {
 
     // TPM 筛选器
     document.getElementById('tpm-hours-filter').addEventListener('change', fetchTPMData);
+    document.getElementById('tpm-metric-filter').addEventListener('change', () => {
+        updateTPMMetricDesc();
+        updateTPMDisplay();
+    });
 
     // 会话列表时间筛选
     document.getElementById('session-time-filter').addEventListener('change', handleSessionTimeFilter);
@@ -1490,32 +1494,11 @@ function updateTokenDailyChart(data) {
     }
 }
 
-// Update TPM statistics
+// Update TPM statistics (legacy - now handled by updateTPMDisplay)
 function updateTPMStats(tpm) {
-    if (!tpm) return;
-
-    document.getElementById('peak-tpm').textContent = formatNumber(tpm.peak_tpm || 0);
-    document.getElementById('avg-tpm').textContent = formatNumber(tpm.avg_tpm || 0);
-    document.getElementById('current-tpm').textContent = formatNumber(tpm.current_tpm || 0);
-    document.getElementById('active-minutes').textContent = formatNumber(tpm.active_minutes || 0);
-
-    // 更新峰值时间显示
-    const peakTimeEl = document.getElementById('peak-tpm-time');
-    if (tpm.peak_time) {
-        peakTimeEl.textContent = tpm.peak_time;
-    } else {
-        peakTimeEl.textContent = '-';
-    }
-
-    // 更新 TPM 图表
-    if (tpmChart && tpm.tpm_timeseries && tpm.tpm_timeseries.length > 0) {
-        const labels = tpm.tpm_timeseries.map(d => d.minute);
-        const data = tpm.tpm_timeseries.map(d => d.tpm);
-
-        tpmChart.data.labels = labels;
-        tpmChart.data.datasets[0].data = data;
-        tpmChart.update();
-    }
+    window.tpmData = tpm;
+    updateTPMMetricDesc();
+    updateTPMDisplay();
 }
 
 // Fetch TPM data with filters
@@ -1524,8 +1507,56 @@ async function fetchTPMData() {
 
     try {
         const tpm = await fetchAPI(`/api/tpm?hours=${hours}`);
-        updateTPMStats(tpm);
+        window.tpmData = tpm;  // Store globally for metric switching
+        updateTPMMetricDesc();
+        updateTPMDisplay();
     } catch (error) {
         console.error('Fetch TPM error:', error);
+    }
+}
+
+// Update TPM metric description
+function updateTPMMetricDesc() {
+    const metric = document.getElementById('tpm-metric-filter').value;
+    const descEl = document.getElementById('tpm-metric-desc');
+    
+    if (metric === 'rate_limit') {
+        descEl.textContent = '限流 TPM = 新处理 tokens (input + output)，用于对齐提供商 TPM 限额';
+    } else {
+        descEl.textContent = '实际消耗 TPM = totalTokens (含 cacheRead)，反映真实全部消耗';
+    }
+}
+
+// Update TPM display based on selected metric
+function updateTPMDisplay() {
+    const tpm = window.tpmData;
+    if (!tpm) return;
+    
+    const metric = document.getElementById('tpm-metric-filter').value;
+    const stats = tpm[metric] || {};
+    
+    document.getElementById('peak-tpm').textContent = formatNumber(stats.peak_tpm || 0);
+    document.getElementById('avg-tpm').textContent = formatNumber(stats.avg_tpm || 0);
+    document.getElementById('current-tpm').textContent = formatNumber(stats.current_tpm || 0);
+    document.getElementById('active-minutes').textContent = formatNumber(tpm.active_minutes || 0);
+
+    // 更新峰值时间显示
+    const peakTimeEl = document.getElementById('peak-tpm-time');
+    if (stats.peak_time) {
+        peakTimeEl.textContent = stats.peak_time;
+    } else {
+        peakTimeEl.textContent = '-';
+    }
+
+    // 更新 TPM 图表
+    if (tpmChart && tpm.tpm_timeseries && tpm.tpm_timeseries.length > 0) {
+        const labels = tpm.tpm_timeseries.map(d => d.minute);
+        const dataKey = metric === 'rate_limit' ? 'rate_limit_tpm' : 'actual_tpm';
+        const data = tpm.tpm_timeseries.map(d => d[dataKey]);
+
+        tpmChart.data.labels = labels;
+        tpmChart.data.datasets[0].data = data;
+        tpmChart.data.datasets[0].label = metric === 'rate_limit' ? '限流 TPM' : '实际消耗 TPM';
+        tpmChart.update();
     }
 }

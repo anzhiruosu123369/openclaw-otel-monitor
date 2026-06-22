@@ -420,14 +420,16 @@ class SessionCollector:
         self._running = False
 
     async def get_tpm_stats(self, hours: int = 24, agent_id: Optional[str] = None) -> Dict[str, Any]:
-        """Calculate Tokens Per Minute statistics.
+        """Calculate Tokens Per Minute statistics with two metrics.
         
         Args:
             hours: Number of hours to analyze (default 24)
             agent_id: Optional agent filter
             
         Returns:
-            Dict with peak_tpm, avg_tpm, current_tpm, active_minutes, peak_time, tpm_timeseries
+            Dict with two TPM metrics:
+            - rate_limit_tpm: input + output (for provider rate limiting)
+            - actual_tpm: totalTokens (actual consumption including cache)
         """
         from datetime import timedelta
         
@@ -435,7 +437,8 @@ class SessionCollector:
         start_time = now - timedelta(hours=hours)
         
         # Collect all token usage events with timestamps
-        token_events = []  # (timestamp, input_tokens, output_tokens, agent_id)
+        # Now tracking both metrics separately
+        token_events = []  # (timestamp, input_tokens, output_tokens, total_tokens, agent_id)
         
         for session in self.sessions.values():
             # Filter by agent if specified
@@ -471,90 +474,104 @@ class SessionCollector:
                     message = event.get('message', {})
                     usage = message.get('usage', {})
                     
-                    # Prefer totalTokens if available, otherwise calculate from input + output
-                    # totalTokens is more accurate as it includes cacheRead tokens
-                    total_tokens = usage.get('totalTokens', 0)
+                    # Extract input and output tokens (for rate limiting TPM)
+                    input_tokens = (
+                        usage.get('input', 0) or 
+                        usage.get('inputTokens', 0) or 
+                        usage.get('prompt_tokens', 0) or
+                        message.get('inputTokens', 0) or 
+                        0
+                    )
+                    output_tokens = (
+                        usage.get('output', 0) or 
+                        usage.get('outputTokens', 0) or 
+                        usage.get('completion_tokens', 0) or
+                        message.get('outputTokens', 0) or 
+                        0
+                    )
                     
+                    # Total tokens (actual consumption including cache)
+                    total_tokens = usage.get('totalTokens', 0)
                     if not total_tokens:
-                        # Fallback: calculate from input + output
-                        input_tokens = (
-                            usage.get('input', 0) or 
-                            usage.get('inputTokens', 0) or 
-                            message.get('inputTokens', 0) or 
-                            0
-                        )
-                        output_tokens = (
-                            usage.get('output', 0) or 
-                            usage.get('outputTokens', 0) or 
-                            message.get('outputTokens', 0) or 
-                            0
-                        )
                         total_tokens = input_tokens + output_tokens
                     
-                    if total_tokens > 0:
+                    if total_tokens > 0 or input_tokens > 0 or output_tokens > 0:
                         token_events.append({
                             'timestamp': timestamp,
-                            'tokens': total_tokens,
+                            'input_tokens': input_tokens,
+                            'output_tokens': output_tokens,
+                            'total_tokens': total_tokens,
+                            'rate_limit_tokens': input_tokens + output_tokens,  # For provider limiting
                             'agent_id': session.agent_id,
                         })
         
         if not token_events:
             return {
-                'peak_tpm': 0,
-                'avg_tpm': 0,
-                'current_tpm': 0,
-                'active_minutes': 0,
-                'peak_time': None,
+                'rate_limit': {
+                    'peak_tpm': 0,
+                    'avg_tpm': 0,
+                    'current_tpm': 0,
+                    'active_minutes': 0,
+                    'peak_time': None,
+                },
+                'actual': {
+                    'peak_tpm': 0,
+                    'avg_tpm': 0,
+                    'current_tpm': 0,
+                    'active_minutes': 0,
+                    'peak_time': None,
+                },
                 'tpm_timeseries': [],
             }
         
         # Sort by timestamp
         token_events.sort(key=lambda x: x['timestamp'])
         
-        # Calculate TPM per minute bucket
-        minute_buckets = {}  # minute_str -> total_tokens
+        # Calculate TPM per minute bucket for both metrics
+        minute_buckets = {}  # minute_str -> {rate_limit: N, actual: N}
         
         for event in token_events:
             # Round down to minute
             minute_key = event['timestamp'].strftime('%Y-%m-%d %H:%M')
             if minute_key not in minute_buckets:
-                minute_buckets[minute_key] = 0
-            minute_buckets[minute_key] += event['tokens']
+                minute_buckets[minute_key] = {'rate_limit': 0, 'actual': 0}
+            minute_buckets[minute_key]['rate_limit'] += event['rate_limit_tokens']
+            minute_buckets[minute_key]['actual'] += event['total_tokens']
         
         # Build time series
         tpm_timeseries = []
         for minute_str, tokens in sorted(minute_buckets.items()):
             tpm_timeseries.append({
                 'minute': minute_str,
-                'tpm': tokens,  # Tokens in this minute = TPM for this minute
+                'rate_limit_tpm': tokens['rate_limit'],
+                'actual_tpm': tokens['actual'],
             })
         
-        # Calculate statistics
-        if tpm_timeseries:
-            tpm_values = [d['tpm'] for d in tpm_timeseries]
-            peak_tpm = max(tpm_values)
-            avg_tpm = sum(tpm_values) / len(tpm_values)
+        # Calculate statistics for both metrics
+        def calc_stats(tsm_key):
+            values = [d[tsm_key] for d in tpm_timeseries]
+            if not values:
+                return {'peak_tpm': 0, 'avg_tpm': 0, 'current_tpm': 0, 'peak_time': None}
             
-            # Find peak time
-            peak_idx = tpm_values.index(peak_tpm)
+            peak_tpm = max(values)
+            avg_tpm = sum(values) / len(values)
+            peak_idx = values.index(peak_tpm)
             peak_time = tpm_timeseries[peak_idx]['minute']
+            current_tpm = values[-1]
             
-            # Current TPM (last minute with activity)
-            current_tpm = tpm_values[-1] if tpm_values else 0
-            
-            active_minutes = len(tpm_timeseries)
-        else:
-            peak_tpm = 0
-            avg_tpm = 0
-            current_tpm = 0
-            peak_time = None
-            active_minutes = 0
+            return {
+                'peak_tpm': peak_tpm,
+                'avg_tpm': round(avg_tpm, 1),
+                'current_tpm': current_tpm,
+                'peak_time': peak_time,
+            }
+        
+        rate_limit_stats = calc_stats('rate_limit_tpm')
+        actual_stats = calc_stats('actual_tpm')
         
         return {
-            'peak_tpm': peak_tpm,
-            'avg_tpm': round(avg_tpm, 1),
-            'current_tpm': current_tpm,
-            'active_minutes': active_minutes,
-            'peak_time': peak_time,
+            'rate_limit': rate_limit_stats,
+            'actual': actual_stats,
+            'active_minutes': len(tpm_timeseries),
             'tpm_timeseries': tpm_timeseries,
         }
