@@ -1,0 +1,1068 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>OpenClaw Monitor - 方案 C 演示（理想方案）</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+    <style>
+        /* 方案 C：理想方案 - 对标 Vercel/Linear 的仪表板体验 */
+        
+        *, *::before, *::after {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            /* 深色主题 - 多层渐变 */
+            --bg-base: #000000;
+            --bg-subtle: #0a0a0f;
+            --bg-surface: #111118;
+            --bg-elevated: #18181f;
+            --bg-overlay: rgba(255, 255, 255, 0.03);
+            
+            /* 边框 */
+            --border-subtle: rgba(255, 255, 255, 0.06);
+            --border-default: rgba(255, 255, 255, 0.1);
+            --border-emphasis: rgba(255, 255, 255, 0.15);
+            
+            /* 文字 */
+            --text-primary: #ffffff;
+            --text-secondary: #a1a1aa;
+            --text-muted: #71717a;
+            
+            /* 强调色 */
+            --accent: #22d3ee;
+            --accent-glow: rgba(34, 211, 238, 0.3);
+            --success: #34d399;
+            --warning: #fbbf24;
+            --error: #f87171;
+            --purple: #a78bfa;
+            
+            /* 语义色 */
+            --cyan: #22d3ee;
+            --green: #34d399;
+            --orange: #fbbf24;
+            --red: #f87171;
+            --purple: #a78bfa;
+            --pink: #f472b6;
+        }
+
+        html, body {
+            height: 100%;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: var(--bg-base);
+            color: var(--text-primary);
+            line-height: 1.5;
+            display: flex;
+            min-height: 100vh;
+        }
+
+        /* Mono font for numbers and code */
+        .mono {
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        /* ========== Sidebar Navigation ========== */
+        .sidebar {
+            width: 240px;
+            background: var(--bg-subtle);
+            border-right: 1px solid var(--border-subtle);
+            display: flex;
+            flex-direction: column;
+            position: fixed;
+            top: 0;
+            left: 0;
+            bottom: 0;
+            z-index: 100;
+        }
+
+        .sidebar-header {
+            padding: 20px;
+            border-bottom: 1px solid var(--border-subtle);
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .logo-icon {
+            width: 28px;
+            height: 28px;
+            background: linear-gradient(135deg, var(--cyan), var(--purple));
+            border-radius: 6px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 14px;
+        }
+
+        .logo-text {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 15px;
+            font-weight: 600;
+            letter-spacing: -0.3px;
+        }
+
+        .sidebar-nav {
+            flex: 1;
+            padding: 16px 12px;
+            overflow-y: auto;
+        }
+
+        .nav-section {
+            margin-bottom: 24px;
+        }
+
+        .nav-section-title {
+            font-size: 11px;
+            font-weight: 600;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            padding: 0 8px;
+            margin-bottom: 8px;
+        }
+
+        .nav-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 10px 12px;
+            border-radius: 8px;
+            font-size: 14px;
+            color: var(--text-secondary);
+            cursor: pointer;
+            transition: all 0.15s;
+        }
+
+        .nav-item:hover {
+            background: var(--bg-overlay);
+            color: var(--text-primary);
+        }
+
+        .nav-item.active {
+            background: var(--bg-overlay);
+            color: var(--text-primary);
+        }
+
+        .nav-item.active::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            width: 3px;
+            height: 20px;
+            background: var(--accent);
+            border-radius: 0 2px 2px 0;
+        }
+
+        .nav-icon {
+            width: 18px;
+            height: 18px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 14px;
+        }
+
+        .nav-badge {
+            margin-left: auto;
+            padding: 2px 8px;
+            border-radius: 10px;
+            font-size: 11px;
+            font-family: 'JetBrains Mono', monospace;
+            background: rgba(34, 211, 238, 0.15);
+            color: var(--cyan);
+        }
+
+        /* Agent List in Sidebar */
+        .agent-list {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .agent-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 12px;
+            border-radius: 6px;
+            font-size: 13px;
+            color: var(--text-secondary);
+            cursor: pointer;
+            transition: all 0.15s;
+        }
+
+        .agent-item:hover {
+            background: var(--bg-overlay);
+        }
+
+        .agent-dot {
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            background: var(--green);
+        }
+
+        .agent-dot.idle {
+            background: var(--text-muted);
+        }
+
+        /* ========== Main Content ========== */
+        .main-content {
+            flex: 1;
+            margin-left: 240px;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* Top Bar */
+        .topbar {
+            height: 56px;
+            background: var(--bg-subtle);
+            border-bottom: 1px solid var(--border-subtle);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 24px;
+            position: sticky;
+            top: 0;
+            z-index: 50;
+        }
+
+        .topbar-left {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+
+        .breadcrumb {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 14px;
+            color: var(--text-secondary);
+        }
+
+        .breadcrumb-sep {
+            color: var(--text-muted);
+        }
+
+        .breadcrumb-current {
+            color: var(--text-primary);
+            font-weight: 500;
+        }
+
+        .topbar-right {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+
+        .gateway-status {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            padding: 4px 10px;
+            background: rgba(52, 211, 153, 0.1);
+            border: 1px solid rgba(52, 211, 153, 0.2);
+            border-radius: 16px;
+            font-size: 12px;
+            color: var(--green);
+        }
+
+        .status-pulse {
+            width: 6px;
+            height: 6px;
+            background: var(--green);
+            border-radius: 50%;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.4; }
+        }
+
+        /* Content Area */
+        .content {
+            flex: 1;
+            padding: 24px;
+            overflow-y: auto;
+        }
+
+        /* ========== Dashboard Grid ========== */
+        .dashboard-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 16px;
+            margin-bottom: 24px;
+        }
+
+        .stat-card {
+            background: var(--bg-surface);
+            border: 1px solid var(--border-subtle);
+            border-radius: 12px;
+            padding: 20px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .stat-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 1px;
+            background: linear-gradient(90deg, transparent, var(--border-emphasis), transparent);
+        }
+
+        .stat-card:hover {
+            border-color: var(--border-default);
+        }
+
+        .stat-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 12px;
+        }
+
+        .stat-label {
+            font-size: 13px;
+            color: var(--text-muted);
+        }
+
+        .stat-trend {
+            font-size: 12px;
+            font-family: 'JetBrains Mono', monospace;
+            padding: 2px 6px;
+            border-radius: 4px;
+        }
+
+        .stat-trend.up {
+            background: rgba(52, 211, 153, 0.1);
+            color: var(--green);
+        }
+
+        .stat-trend.down {
+            background: rgba(248, 113, 113, 0.1);
+            color: var(--red);
+        }
+
+        .stat-value {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 32px;
+            font-weight: 600;
+            color: var(--text-primary);
+            line-height: 1;
+        }
+
+        .stat-sparkline {
+            margin-top: 12px;
+            height: 24px;
+            display: flex;
+            align-items: flex-end;
+            gap: 2px;
+        }
+
+        .sparkline-bar {
+            flex: 1;
+            background: var(--accent);
+            border-radius: 1px;
+            opacity: 0.5;
+        }
+
+        /* ========== Two Column Layout ========== */
+        .two-col {
+            display: grid;
+            grid-template-columns: 1fr 360px;
+            gap: 24px;
+        }
+
+        /* Panel */
+        .panel {
+            background: var(--bg-surface);
+            border: 1px solid var(--border-subtle);
+            border-radius: 12px;
+            overflow: hidden;
+        }
+
+        .panel-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 16px 20px;
+            border-bottom: 1px solid var(--border-subtle);
+        }
+
+        .panel-title {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 14px;
+            font-weight: 600;
+        }
+
+        .panel-actions {
+            display: flex;
+            gap: 8px;
+        }
+
+        .panel-btn {
+            padding: 6px 12px;
+            border-radius: 6px;
+            font-size: 12px;
+            background: var(--bg-elevated);
+            border: 1px solid var(--border-subtle);
+            color: var(--text-secondary);
+            cursor: pointer;
+            transition: all 0.15s;
+        }
+
+        .panel-btn:hover {
+            border-color: var(--border-default);
+            color: var(--text-primary);
+        }
+
+        .panel-btn.primary {
+            background: var(--accent);
+            border-color: var(--accent);
+            color: var(--bg-base);
+        }
+
+        /* TPM Chart */
+        .tpm-chart {
+            padding: 20px;
+        }
+
+        .tpm-stats {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 16px;
+            margin-bottom: 20px;
+        }
+
+        .tpm-stat {
+            text-align: center;
+            padding: 16px;
+            background: var(--bg-elevated);
+            border-radius: 8px;
+        }
+
+        .tpm-stat-label {
+            font-size: 11px;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 8px;
+        }
+
+        .tpm-stat-value {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 24px;
+            font-weight: 600;
+        }
+
+        .tpm-stat-value.peak { color: var(--red); }
+        .tpm-stat-value.avg { color: var(--orange); }
+        .tpm-stat-value.current { color: var(--green); }
+
+        .chart-area {
+            height: 180px;
+            display: flex;
+            align-items: flex-end;
+            gap: 2px;
+            padding: 0 4px;
+        }
+
+        .chart-bar {
+            flex: 1;
+            background: linear-gradient(to top, var(--accent), transparent);
+            border-radius: 2px 2px 0 0;
+            min-height: 4px;
+            transition: all 0.2s;
+        }
+
+        .chart-bar:hover {
+            background: var(--accent);
+        }
+
+        /* Session List */
+        .session-list {
+            padding: 12px;
+        }
+
+        .session-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: background 0.15s;
+        }
+
+        .session-item:hover {
+            background: var(--bg-overlay);
+        }
+
+        .session-avatar {
+            width: 36px;
+            height: 36px;
+            background: var(--bg-elevated);
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 12px;
+            color: var(--accent);
+        }
+
+        .session-info {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .session-name {
+            font-size: 14px;
+            font-weight: 500;
+            color: var(--text-primary);
+            margin-bottom: 2px;
+        }
+
+        .session-meta {
+            font-size: 12px;
+            color: var(--text-muted);
+        }
+
+        .session-status {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: var(--green);
+        }
+
+        .session-status.idle {
+            background: var(--text-muted);
+        }
+
+        .session-status.error {
+            background: var(--red);
+        }
+
+        /* Right Sidebar - Details Panel */
+        .details-panel {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .details-section {
+            padding: 16px;
+            border-bottom: 1px solid var(--border-subtle);
+        }
+
+        .details-section:last-child {
+            border-bottom: none;
+        }
+
+        .details-title {
+            font-size: 11px;
+            font-weight: 600;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 12px;
+        }
+
+        .detail-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 8px 0;
+            font-size: 13px;
+        }
+
+        .detail-label {
+            color: var(--text-muted);
+        }
+
+        .detail-value {
+            font-family: 'JetBrains Mono', monospace;
+            color: var(--text-primary);
+        }
+
+        /* Model Distribution Mini Chart */
+        .model-dist {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .model-bar {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .model-bar-fill {
+            height: 8px;
+            background: var(--accent);
+            border-radius: 4px;
+        }
+
+        .model-bar-label {
+            font-size: 12px;
+            color: var(--text-secondary);
+            min-width: 100px;
+        }
+
+        .model-bar-value {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 12px;
+            color: var(--text-muted);
+        }
+
+        /* Error List */
+        .error-list {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .error-item {
+            padding: 12px;
+            background: rgba(248, 113, 113, 0.05);
+            border: 1px solid rgba(248, 113, 113, 0.1);
+            border-radius: 8px;
+        }
+
+        .error-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 4px;
+        }
+
+        .error-agent {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 12px;
+            color: var(--text-primary);
+        }
+
+        .error-time {
+            font-size: 11px;
+            color: var(--text-muted);
+        }
+
+        .error-message {
+            font-size: 12px;
+            color: var(--red);
+        }
+
+        /* Footer */
+        .footer {
+            padding: 16px 24px;
+            border-top: 1px solid var(--border-subtle);
+            font-size: 12px;
+            color: var(--text-muted);
+            display: flex;
+            justify-content: space-between;
+        }
+
+        /* Responsive */
+        @media (max-width: 1200px) {
+            .two-col {
+                grid-template-columns: 1fr;
+            }
+            
+            .details-panel {
+                display: none;
+            }
+        }
+
+        @media (max-width: 1024px) {
+            .dashboard-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+
+        @media (max-width: 768px) {
+            .sidebar {
+                display: none;
+            }
+            
+            .main-content {
+                margin-left: 0;
+            }
+            
+            .dashboard-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Sidebar Navigation -->
+    <aside class="sidebar">
+        <div class="sidebar-header">
+            <div class="logo">
+                <div class="logo-icon">◈</div>
+                <span class="logo-text">OpenClaw</span>
+            </div>
+        </div>
+        
+        <nav class="sidebar-nav">
+            <div class="nav-section">
+                <div class="nav-section-title">概览</div>
+                <div class="nav-item active">
+                    <span class="nav-icon">📊</span>
+                    <span>仪表板</span>
+                </div>
+                <div class="nav-item">
+                    <span class="nav-icon">⚡</span>
+                    <span>实时监控</span>
+                    <span class="nav-badge">Live</span>
+                </div>
+            </div>
+            
+            <div class="nav-section">
+                <div class="nav-section-title">Agents</div>
+                <div class="agent-list">
+                    <div class="agent-item">
+                        <span class="agent-dot"></span>
+                        <span class="mono">agent-001</span>
+                    </div>
+                    <div class="agent-item">
+                        <span class="agent-dot"></span>
+                        <span class="mono">agent-002</span>
+                    </div>
+                    <div class="agent-item">
+                        <span class="agent-dot idle"></span>
+                        <span class="mono">agent-003</span>
+                    </div>
+                    <div class="agent-item">
+                        <span class="agent-dot"></span>
+                        <span class="mono">agent-004</span>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="nav-section">
+                <div class="nav-section-title">分析</div>
+                <div class="nav-item">
+                    <span class="nav-icon">📈</span>
+                    <span>Token 报告</span>
+                </div>
+                <div class="nav-item">
+                    <span class="nav-icon">🤖</span>
+                    <span>模型统计</span>
+                </div>
+                <div class="nav-item">
+                    <span class="nav-icon">⚠️</span>
+                    <span>错误日志</span>
+                    <span class="nav-badge" style="background: rgba(248, 113, 113, 0.15); color: var(--red);">3</span>
+                </div>
+            </div>
+        </nav>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="main-content">
+        <!-- Top Bar -->
+        <header class="topbar">
+            <div class="topbar-left">
+                <div class="breadcrumb">
+                    <span>OpenClaw</span>
+                    <span class="breadcrumb-sep">/</span>
+                    <span class="breadcrumb-current">仪表板</span>
+                </div>
+            </div>
+            <div class="topbar-right">
+                <div class="gateway-status">
+                    <span class="status-pulse"></span>
+                    <span>Gateway 正常</span>
+                    <span style="color: var(--text-muted);">12.5ms</span>
+                </div>
+                <div style="color: var(--text-muted); font-size: 13px;">
+                    更新于 <span class="mono">16:45:32</span>
+                </div>
+            </div>
+        </header>
+
+        <!-- Content -->
+        <div class="content">
+            <!-- Stats Grid -->
+            <div class="dashboard-grid">
+                <div class="stat-card">
+                    <div class="stat-header">
+                        <span class="stat-label">总会话数</span>
+                        <span class="stat-trend up">+12%</span>
+                    </div>
+                    <div class="stat-value">1,247</div>
+                    <div class="stat-sparkline">
+                        <div class="sparkline-bar" style="height: 40%;"></div>
+                        <div class="sparkline-bar" style="height: 60%;"></div>
+                        <div class="sparkline-bar" style="height: 35%;"></div>
+                        <div class="sparkline-bar" style="height: 80%;"></div>
+                        <div class="sparkline-bar" style="height: 55%;"></div>
+                        <div class="sparkline-bar" style="height: 70%;"></div>
+                        <div class="sparkline-bar" style="height: 45%;"></div>
+                        <div class="sparkline-bar" style="height: 90%;"></div>
+                    </div>
+                </div>
+                
+                <div class="stat-card">
+                    <div class="stat-header">
+                        <span class="stat-label">活跃会话</span>
+                        <span class="stat-trend up">+3</span>
+                    </div>
+                    <div class="stat-value">23</div>
+                    <div class="stat-sparkline">
+                        <div class="sparkline-bar" style="height: 50%; background: var(--green);"></div>
+                        <div class="sparkline-bar" style="height: 65%; background: var(--green);"></div>
+                        <div class="sparkline-bar" style="height: 40%; background: var(--green);"></div>
+                        <div class="sparkline-bar" style="height: 70%; background: var(--green);"></div>
+                        <div class="sparkline-bar" style="height: 85%; background: var(--green);"></div>
+                        <div class="sparkline-bar" style="height: 60%; background: var(--green);"></div>
+                        <div class="sparkline-bar" style="height: 75%; background: var(--green);"></div>
+                        <div class="sparkline-bar" style="height: 90%; background: var(--green);"></div>
+                    </div>
+                </div>
+                
+                <div class="stat-card">
+                    <div class="stat-header">
+                        <span class="stat-label">Token 总量</span>
+                        <span class="stat-trend up">+24%</span>
+                    </div>
+                    <div class="stat-value">2.4M</div>
+                    <div class="stat-sparkline">
+                        <div class="sparkline-bar" style="height: 30%; background: var(--purple);"></div>
+                        <div class="sparkline-bar" style="height: 45%; background: var(--purple);"></div>
+                        <div class="sparkline-bar" style="height: 55%; background: var(--purple);"></div>
+                        <div class="sparkline-bar" style="height: 40%; background: var(--purple);"></div>
+                        <div class="sparkline-bar" style="height: 65%; background: var(--purple);"></div>
+                        <div class="sparkline-bar" style="height: 75%; background: var(--purple);"></div>
+                        <div class="sparkline-bar" style="height: 85%; background: var(--purple);"></div>
+                        <div class="sparkline-bar" style="height: 95%; background: var(--purple);"></div>
+                    </div>
+                </div>
+                
+                <div class="stat-card">
+                    <div class="stat-header">
+                        <span class="stat-label">使用模型数</span>
+                    </div>
+                    <div class="stat-value">8</div>
+                    <div class="stat-sparkline">
+                        <div class="sparkline-bar" style="height: 60%; background: var(--orange);"></div>
+                        <div class="sparkline-bar" style="height: 60%; background: var(--orange);"></div>
+                        <div class="sparkline-bar" style="height: 70%; background: var(--orange);"></div>
+                        <div class="sparkline-bar" style="height: 70%; background: var(--orange);"></div>
+                        <div class="sparkline-bar" style="height: 80%; background: var(--orange);"></div>
+                        <div class="sparkline-bar" style="height: 80%; background: var(--orange);"></div>
+                        <div class="sparkline-bar" style="height: 80%; background: var(--orange);"></div>
+                        <div class="sparkline-bar" style="height: 80%; background: var(--orange);"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Two Column Layout -->
+            <div class="two-col">
+                <!-- Left: Main Content -->
+                <div style="display: flex; flex-direction: column; gap: 24px;">
+                    <!-- TPM Panel -->
+                    <div class="panel">
+                        <div class="panel-header">
+                            <span class="panel-title">⚡ TPM 实时监控</span>
+                            <div class="panel-actions">
+                                <button class="panel-btn">全部 Agent</button>
+                                <button class="panel-btn">24h</button>
+                                <button class="panel-btn primary">限流 TPM</button>
+                            </div>
+                        </div>
+                        <div class="tpm-chart">
+                            <div class="tpm-stats">
+                                <div class="tpm-stat">
+                                    <div class="tpm-stat-label">高峰</div>
+                                    <div class="tpm-stat-value peak">45,230</div>
+                                    <div style="font-size: 11px; color: var(--text-muted); margin-top: 4px;">14:32</div>
+                                </div>
+                                <div class="tpm-stat">
+                                    <div class="tpm-stat-label">平均</div>
+                                    <div class="tpm-stat-value avg">12,847</div>
+                                    <div style="font-size: 11px; color: var(--text-muted); margin-top: 4px;">186 分钟</div>
+                                </div>
+                                <div class="tpm-stat">
+                                    <div class="tpm-stat-label">当前</div>
+                                    <div class="tpm-stat-value current">8,456</div>
+                                    <div style="font-size: 11px; color: var(--text-muted); margin-top: 4px;">实时</div>
+                                </div>
+                            </div>
+                            <div class="chart-area">
+                                <div class="chart-bar" style="height: 45%;"></div>
+                                <div class="chart-bar" style="height: 62%;"></div>
+                                <div class="chart-bar" style="height: 38%;"></div>
+                                <div class="chart-bar" style="height: 85%;"></div>
+                                <div class="chart-bar" style="height: 72%;"></div>
+                                <div class="chart-bar" style="height: 55%;"></div>
+                                <div class="chart-bar" style="height: 91%;"></div>
+                                <div class="chart-bar" style="height: 68%;"></div>
+                                <div class="chart-bar" style="height: 42%;"></div>
+                                <div class="chart-bar" style="height: 78%;"></div>
+                                <div class="chart-bar" style="height: 56%;"></div>
+                                <div class="chart-bar" style="height: 33%;"></div>
+                                <div class="chart-bar" style="height: 67%;"></div>
+                                <div class="chart-bar" style="height: 89%;"></div>
+                                <div class="chart-bar" style="height: 45%;"></div>
+                                <div class="chart-bar" style="height: 72%;"></div>
+                                <div class="chart-bar" style="height: 58%;"></div>
+                                <div class="chart-bar" style="height: 41%;"></div>
+                                <div class="chart-bar" style="height: 83%;"></div>
+                                <div class="chart-bar" style="height: 65%;"></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Sessions Panel -->
+                    <div class="panel">
+                        <div class="panel-header">
+                            <span class="panel-title">会话列表</span>
+                            <div class="panel-actions">
+                                <button class="panel-btn">今天</button>
+                                <button class="panel-btn">全部状态</button>
+                                <button class="panel-btn">导出</button>
+                            </div>
+                        </div>
+                        <div class="session-list">
+                            <div class="session-item">
+                                <div class="session-avatar">01</div>
+                                <div class="session-info">
+                                    <div class="session-name">agent-001</div>
+                                    <div class="session-meta">claude-3-opus · 47 消息 · 2 分钟前</div>
+                                </div>
+                                <span class="session-status"></span>
+                            </div>
+                            <div class="session-item">
+                                <div class="session-avatar">02</div>
+                                <div class="session-info">
+                                    <div class="session-name">agent-002</div>
+                                    <div class="session-meta">gpt-4o · 32 消息 · 5 分钟前</div>
+                                </div>
+                                <span class="session-status"></span>
+                            </div>
+                            <div class="session-item">
+                                <div class="session-avatar">03</div>
+                                <div class="session-info">
+                                    <div class="session-name">agent-003</div>
+                                    <div class="session-meta">claude-3-sonnet · 128 消息 · 15 分钟前</div>
+                                </div>
+                                <span class="session-status idle"></span>
+                            </div>
+                            <div class="session-item">
+                                <div class="session-avatar">04</div>
+                                <div class="session-info">
+                                    <div class="session-name">agent-001</div>
+                                    <div class="session-meta">claude-3-opus · 23 消息 · 1 小时前</div>
+                                </div>
+                                <span class="session-status error"></span>
+                            </div>
+                            <div class="session-item">
+                                <div class="session-avatar">05</div>
+                                <div class="session-info">
+                                    <div class="session-name">agent-004</div>
+                                    <div class="session-meta">gemini-1.5-pro · 89 消息 · 2 小时前</div>
+                                </div>
+                                <span class="session-status idle"></span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Right: Details Panel -->
+                <div class="panel details-panel">
+                    <div class="details-section">
+                        <div class="details-title">模型分布</div>
+                        <div class="model-dist">
+                            <div class="model-bar">
+                                <div class="model-bar-label">claude-3-opus</div>
+                                <div class="model-bar-fill" style="width: 85%;"></div>
+                                <div class="model-bar-value">1,234</div>
+                            </div>
+                            <div class="model-bar">
+                                <div class="model-bar-label">gpt-4o</div>
+                                <div class="model-bar-fill" style="width: 68%; background: var(--purple);"></div>
+                                <div class="model-bar-value">987</div>
+                            </div>
+                            <div class="model-bar">
+                                <div class="model-bar-label">claude-3-sonnet</div>
+                                <div class="model-bar-fill" style="width: 52%; background: var(--green);"></div>
+                                <div class="model-bar-value">756</div>
+                            </div>
+                            <div class="model-bar">
+                                <div class="model-bar-label">gemini-1.5-pro</div>
+                                <div class="model-bar-fill" style="width: 35%; background: var(--orange);"></div>
+                                <div class="model-bar-value">432</div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="details-section">
+                        <div class="details-title">Token 概览</div>
+                        <div class="detail-row">
+                            <span class="detail-label">总 Input</span>
+                            <span class="detail-value" style="color: var(--cyan);">1.9M</span>
+                        </div>
+                        <div class="detail-row">
+                            <span class="detail-label">总 Output</span>
+                            <span class="detail-value" style="color: var(--purple);">579K</span>
+                        </div>
+                        <div class="detail-row">
+                            <span class="detail-label">总调用</span>
+                            <span class="detail-value">2,977</span>
+                        </div>
+                        <div class="detail-row">
+                            <span class="detail-label">平均/会话</span>
+                            <span class="detail-value">42K</span>
+                        </div>
+                    </div>
+                    
+                    <div class="details-section">
+                        <div class="details-title" style="color: var(--red);">最近错误 (3)</div>
+                        <div class="error-list">
+                            <div class="error-item">
+                                <div class="error-header">
+                                    <span class="error-agent">agent-002</span>
+                                    <span class="error-time">5 分钟前</span>
+                                </div>
+                                <div class="error-message">Rate limit exceeded</div>
+                            </div>
+                            <div class="error-item">
+                                <div class="error-header">
+                                    <span class="error-agent">agent-001</span>
+                                    <span class="error-time">1 小时前</span>
+                                </div>
+                                <div class="error-message">Context length exceeded</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Footer -->
+        <footer class="footer">
+            <span>OpenClaw OTel Monitor v0.2.0</span>
+            <span>方案 C 演示（理想方案）</span>
+        </footer>
+    </main>
+</body>
+</html>

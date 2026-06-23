@@ -23,7 +23,9 @@ document.addEventListener('DOMContentLoaded', () => {
     connectWebSocket();
     setupEventListeners();
     // 加载 token daily 数据
-    fetchTokenDailyData(7);
+    const tokenDaysFilter = document.getElementById('token-days-filter');
+    const defaultDays = tokenDaysFilter ? parseInt(tokenDaysFilter.value) : 30;
+    fetchTokenDailyData(defaultDays);
     
     // 设置默认筛选为"今天"
     setDefaultTimeFilters();
@@ -215,7 +217,13 @@ function initCharts() {
                         grid: { color: chartColors.grid }
                     },
                     y: {
-                        ticks: { color: chartColors.text, font: { size: 11 } },
+                        ticks: { 
+                            color: chartColors.text, 
+                            font: { size: 11 },
+                            callback: function(value) {
+                                return value + 'M';
+                            }
+                        },
                         grid: { color: chartColors.grid },
                         beginAtZero: true
                     }
@@ -240,12 +248,7 @@ function initCharts() {
                         callbacks: {
                             label: function(context) {
                                 const value = context.raw;
-                                if (value >= 1000000) {
-                                    return context.dataset.label + ': ' + (value / 1000000).toFixed(2) + 'M';
-                                } else if (value >= 1000) {
-                                    return context.dataset.label + ': ' + (value / 1000).toFixed(1) + 'K';
-                                }
-                                return context.dataset.label + ': ' + value;
+                                return context.dataset.label + ': ' + value.toFixed(2) + 'M tokens';
                             }
                         }
                     }

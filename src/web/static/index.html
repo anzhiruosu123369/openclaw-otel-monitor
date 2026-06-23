@@ -171,15 +171,15 @@
                     <h3 class="chart-card-title">Token 时间分布</h3>
                     <select class="filter-select" id="token-days-filter">
                         <option value="1">最近 24 小时</option>
-                        <option value="7" selected>最近 7 天</option>
+                        <option value="7">最近 7 天</option>
                         <option value="14">最近 14 天</option>
-                        <option value="30">最近 30 天</option>
+                        <option value="30" selected>最近 30 天</option>
                     </select>
                 </div>
                 <div class="chart-placeholder">
                     <canvas id="token-daily-chart"></canvas>
                 </div>
-                <div class="token-summary-inline">
+                <div class="token-summary-inline" id="token-summary">
                     <div>
                         <span class="summary-label">总 Input:</span>
                         <span class="summary-value cyan mono" id="total-input">0</span>
@@ -240,6 +240,6 @@
         OpenClaw OTel Monitor v0.2.0
     </footer>
 
-    <script src="/static/js/app.js?v=23"></script>
+    <script src="/static/js/app.js?v=26"></script>
 </body>
 </html>

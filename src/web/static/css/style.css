@@ -551,9 +551,10 @@ td {
 }
 
 .token-summary-inline .summary-unit {
-    color: var(--text-muted);
+    color: var(--text-secondary);
     font-size: 12px;
-    margin-left: 2px;
+    margin-left: 4px;
+    font-weight: 500;
 }
 
 /* ========== Loading ========== */

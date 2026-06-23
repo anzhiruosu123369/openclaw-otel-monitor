@@ -1,0 +1,832 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>OpenClaw Monitor - 方案 B 演示</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+    <style>
+        /* CSS Reset & Variables */
+        *, *::before, *::after {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --bg-primary: #0a0a0f;
+            --bg-secondary: #12121a;
+            --bg-tertiary: #1a1a24;
+            --bg-card: rgba(18, 18, 26, 0.8);
+            --border-color: rgba(255, 255, 255, 0.08);
+            --border-hover: rgba(255, 255, 255, 0.15);
+            
+            --text-primary: #ffffff;
+            --text-secondary: #94a3b8;
+            --text-muted: #64748b;
+            
+            --accent-cyan: #22d3ee;
+            --accent-purple: #6366f1;
+            --accent-green: #34d399;
+            --accent-orange: #fbbf24;
+            --accent-red: #f87171;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            line-height: 1.5;
+            min-height: 100vh;
+        }
+
+        /* Typography - JetBrains Mono for numbers */
+        .mono {
+            font-family: 'JetBrains Mono', 'SF Mono', monospace;
+        }
+
+        /* Layout */
+        .container {
+            max-width: 1440px;
+            margin: 0 auto;
+            padding: 0 24px;
+        }
+
+        /* Header */
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 16px 24px;
+            background: var(--bg-secondary);
+            border-bottom: 1px solid var(--border-color);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .logo-icon {
+            width: 32px;
+            height: 32px;
+            background: linear-gradient(135deg, var(--accent-cyan), var(--accent-purple));
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
+        }
+
+        .logo-text {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 18px;
+            font-weight: 600;
+            letter-spacing: -0.5px;
+        }
+
+        .header-right {
+            display: flex;
+            align-items: center;
+            gap: 24px;
+        }
+
+        /* Gateway Status - Inline in header */
+        .gateway-status {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 6px 12px;
+            background: rgba(52, 211, 153, 0.1);
+            border: 1px solid rgba(52, 211, 153, 0.2);
+            border-radius: 20px;
+            font-size: 13px;
+        }
+
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            background: var(--accent-green);
+            border-radius: 50%;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        .last-update {
+            color: var(--text-muted);
+            font-size: 13px;
+        }
+
+        /* Main Content */
+        main {
+            padding: 24px 0;
+        }
+
+        /* Stats Grid - First priority */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 16px;
+            margin-bottom: 24px;
+        }
+
+        .stat-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 20px;
+            position: relative;
+            overflow: hidden;
+            transition: border-color 0.2s;
+        }
+
+        .stat-card:hover {
+            border-color: var(--border-hover);
+        }
+
+        .stat-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 2px;
+        }
+
+        .stat-card:nth-child(1)::before { background: var(--accent-cyan); }
+        .stat-card:nth-child(2)::before { background: var(--accent-green); }
+        .stat-card:nth-child(3)::before { background: var(--accent-purple); }
+        .stat-card:nth-child(4)::before { background: var(--accent-orange); }
+
+        .stat-label {
+            font-size: 12px;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 8px;
+        }
+
+        .stat-value {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 32px;
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+
+        /* TPM Section */
+        .tpm-section {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            margin-bottom: 24px;
+            overflow: hidden;
+        }
+
+        .tpm-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 16px 20px;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .tpm-title {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+
+        .tpm-filters {
+            display: flex;
+            gap: 8px;
+        }
+
+        .filter-select {
+            padding: 6px 12px;
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            color: var(--text-secondary);
+            font-size: 13px;
+            cursor: pointer;
+        }
+
+        .filter-select:focus {
+            outline: none;
+            border-color: var(--accent-cyan);
+        }
+
+        .tpm-body {
+            display: grid;
+            grid-template-columns: 200px 1fr;
+            gap: 0;
+        }
+
+        .tpm-stats {
+            padding: 20px;
+            border-right: 1px solid var(--border-color);
+        }
+
+        .tpm-stat {
+            margin-bottom: 20px;
+        }
+
+        .tpm-stat:last-child {
+            margin-bottom: 0;
+        }
+
+        .tpm-stat-label {
+            font-size: 11px;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 4px;
+        }
+
+        .tpm-stat-value {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 28px;
+            font-weight: 600;
+        }
+
+        .tpm-stat-value.peak { color: var(--accent-red); }
+        .tpm-stat-value.avg { color: var(--accent-orange); }
+        .tpm-stat-value.current { color: var(--accent-green); }
+
+        .tpm-stat-meta {
+            font-size: 12px;
+            color: var(--text-muted);
+            margin-top: 2px;
+        }
+
+        .tpm-chart {
+            padding: 20px;
+            display: flex;
+            align-items: flex-end;
+            gap: 2px;
+            height: 200px;
+        }
+
+        .chart-bar {
+            flex: 1;
+            background: linear-gradient(to top, var(--accent-cyan), transparent);
+            border-radius: 2px 2px 0 0;
+            min-height: 4px;
+            transition: opacity 0.2s;
+        }
+
+        .chart-bar:hover {
+            opacity: 0.8;
+        }
+
+        /* Sessions Section - Second priority */
+        .section-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 16px;
+        }
+
+        .section-title {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 16px;
+            font-weight: 600;
+        }
+
+        .section-filters {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+        }
+
+        .search-input {
+            padding: 8px 14px;
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            color: var(--text-primary);
+            font-size: 13px;
+            width: 200px;
+        }
+
+        .search-input::placeholder {
+            color: var(--text-muted);
+        }
+
+        .search-input:focus {
+            outline: none;
+            border-color: var(--accent-cyan);
+        }
+
+        /* Table */
+        .table-container {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            overflow: hidden;
+            margin-bottom: 24px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        th, td {
+            padding: 12px 16px;
+            text-align: left;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        th {
+            font-size: 11px;
+            font-weight: 600;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            background: var(--bg-tertiary);
+        }
+
+        tr:last-child td {
+            border-bottom: none;
+        }
+
+        tr:hover td {
+            background: rgba(255, 255, 255, 0.02);
+        }
+
+        td {
+            font-size: 14px;
+            color: var(--text-secondary);
+        }
+
+        .agent-name {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 13px;
+            color: var(--text-primary);
+        }
+
+        .status-badge {
+            display: inline-flex;
+            align-items: center;
+            padding: 4px 10px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: 500;
+        }
+
+        .status-badge.working {
+            background: rgba(52, 211, 153, 0.15);
+            color: var(--accent-green);
+        }
+
+        .status-badge.finished {
+            background: rgba(99, 102, 241, 0.15);
+            color: var(--accent-purple);
+        }
+
+        .status-badge.interrupted {
+            background: rgba(248, 113, 113, 0.15);
+            color: var(--accent-red);
+        }
+
+        /* Charts Grid */
+        .charts-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 24px;
+            margin-bottom: 24px;
+        }
+
+        .chart-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 20px;
+        }
+
+        .chart-card-title {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 14px;
+            font-weight: 600;
+            margin-bottom: 16px;
+            color: var(--text-primary);
+        }
+
+        .chart-placeholder {
+            height: 200px;
+            background: var(--bg-tertiary);
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--text-muted);
+            font-size: 13px;
+        }
+
+        /* Model Stats - Compact table inside chart card */
+        .model-stats-table {
+            width: 100%;
+            margin-top: 16px;
+        }
+
+        .model-stats-table th,
+        .model-stats-table td {
+            padding: 10px 12px;
+            font-size: 13px;
+        }
+
+        .model-stats-table th {
+            background: transparent;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .model-name {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 12px;
+            color: var(--accent-cyan);
+        }
+
+        /* Errors Section */
+        .errors-section {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            border-left: 3px solid var(--accent-red);
+            padding: 20px;
+        }
+
+        .errors-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 16px;
+        }
+
+        .errors-title {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--accent-red);
+        }
+
+        .error-count {
+            background: rgba(248, 113, 113, 0.15);
+            color: var(--accent-red);
+            padding: 4px 12px;
+            border-radius: 12px;
+            font-size: 13px;
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        .error-item {
+            padding: 12px;
+            background: rgba(248, 113, 113, 0.05);
+            border-radius: 8px;
+            margin-bottom: 8px;
+            font-size: 13px;
+        }
+
+        .error-item:last-child {
+            margin-bottom: 0;
+        }
+
+        .error-agent {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 12px;
+            color: var(--text-primary);
+            margin-bottom: 4px;
+        }
+
+        .error-message {
+            color: var(--accent-red);
+            font-size: 13px;
+        }
+
+        /* Footer */
+        footer {
+            text-align: center;
+            padding: 24px;
+            color: var(--text-muted);
+            font-size: 13px;
+            border-top: 1px solid var(--border-color);
+            margin-top: 24px;
+        }
+
+        /* Responsive */
+        @media (max-width: 1024px) {
+            .stats-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+            
+            .charts-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .tpm-body {
+                grid-template-columns: 1fr;
+            }
+            
+            .tpm-stats {
+                border-right: none;
+                border-bottom: 1px solid var(--border-color);
+            }
+        }
+
+        @media (max-width: 768px) {
+            .stats-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .header-right {
+                gap: 12px;
+            }
+            
+            .last-update {
+                display: none;
+            }
+            
+            .section-filters {
+                flex-wrap: wrap;
+            }
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <div class="logo">
+            <div class="logo-icon">◈</div>
+            <span class="logo-text">OpenClaw Monitor</span>
+        </div>
+        <div class="header-right">
+            <div class="gateway-status">
+                <span class="status-dot"></span>
+                <span>Gateway 正常</span>
+                <span style="color: var(--text-muted);">12.5ms</span>
+            </div>
+            <span class="last-update">更新于 16:45:32</span>
+        </div>
+    </header>
+
+    <main class="container">
+        <!-- Stats Grid - First Screen -->
+        <section class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-label">总会话数</div>
+                <div class="stat-value mono">1,247</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label">活跃会话</div>
+                <div class="stat-value mono">23</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label">Token 总量</div>
+                <div class="stat-value mono">2.4M</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label">使用模型数</div>
+                <div class="stat-value mono">8</div>
+            </div>
+        </section>
+
+        <!-- TPM Section - Real-time Monitor -->
+        <section class="tpm-section">
+            <div class="tpm-header">
+                <span class="tpm-title">⚡ TPM 实时监控</span>
+                <div class="tpm-filters">
+                    <select class="filter-select">
+                        <option>全部 Agent</option>
+                        <option>agent-001</option>
+                        <option>agent-002</option>
+                    </select>
+                    <select class="filter-select">
+                        <option>最近 24 小时</option>
+                        <option>最近 1 小时</option>
+                        <option>最近 7 天</option>
+                    </select>
+                    <select class="filter-select">
+                        <option>限流 TPM</option>
+                        <option>实际消耗 TPM</option>
+                    </select>
+                </div>
+            </div>
+            <div class="tpm-body">
+                <div class="tpm-stats">
+                    <div class="tpm-stat">
+                        <div class="tpm-stat-label">高峰 TPM</div>
+                        <div class="tpm-stat-value peak mono">45,230</div>
+                        <div class="tpm-stat-meta">14:32 今天</div>
+                    </div>
+                    <div class="tpm-stat">
+                        <div class="tpm-stat-label">平均 TPM</div>
+                        <div class="tpm-stat-value avg mono">12,847</div>
+                        <div class="tpm-stat-meta">活跃 186 分钟</div>
+                    </div>
+                    <div class="tpm-stat">
+                        <div class="tpm-stat-label">当前 TPM</div>
+                        <div class="tpm-stat-value current mono">8,456</div>
+                        <div class="tpm-stat-meta">最近一分钟</div>
+                    </div>
+                </div>
+                <div class="tpm-chart">
+                    <!-- Simulated chart bars -->
+                    <div class="chart-bar" style="height: 45%;"></div>
+                    <div class="chart-bar" style="height: 62%;"></div>
+                    <div class="chart-bar" style="height: 38%;"></div>
+                    <div class="chart-bar" style="height: 85%;"></div>
+                    <div class="chart-bar" style="height: 72%;"></div>
+                    <div class="chart-bar" style="height: 55%;"></div>
+                    <div class="chart-bar" style="height: 91%;"></div>
+                    <div class="chart-bar" style="height: 68%;"></div>
+                    <div class="chart-bar" style="height: 42%;"></div>
+                    <div class="chart-bar" style="height: 78%;"></div>
+                    <div class="chart-bar" style="height: 56%;"></div>
+                    <div class="chart-bar" style="height: 33%;"></div>
+                    <div class="chart-bar" style="height: 67%;"></div>
+                    <div class="chart-bar" style="height: 89%;"></div>
+                    <div class="chart-bar" style="height: 45%;"></div>
+                    <div class="chart-bar" style="height: 72%;"></div>
+                    <div class="chart-bar" style="height: 58%;"></div>
+                    <div class="chart-bar" style="height: 41%;"></div>
+                    <div class="chart-bar" style="height: 83%;"></div>
+                    <div class="chart-bar" style="height: 65%;"></div>
+                    <div class="chart-bar" style="height: 49%;"></div>
+                    <div class="chart-bar" style="height: 76%;"></div>
+                    <div class="chart-bar" style="height: 52%;"></div>
+                    <div class="chart-bar" style="height: 38%;"></div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Sessions Table - Second Screen -->
+        <section>
+            <div class="section-header">
+                <h2 class="section-title">会话列表</h2>
+                <div class="section-filters">
+                    <select class="filter-select">
+                        <option>今天</option>
+                        <option>最近 7 天</option>
+                        <option>全部</option>
+                    </select>
+                    <select class="filter-select">
+                        <option>全部状态</option>
+                        <option>运行中</option>
+                        <option>已完成</option>
+                    </select>
+                    <select class="filter-select">
+                        <option>全部 Agent</option>
+                    </select>
+                    <input type="text" class="search-input" placeholder="搜索会话...">
+                </div>
+            </div>
+            <div class="table-container">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Agent</th>
+                            <th>状态</th>
+                            <th>模型</th>
+                            <th>消息数</th>
+                            <th>Tokens</th>
+                            <th>更新时间</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><span class="agent-name">agent-001</span></td>
+                            <td><span class="status-badge working">运行中</span></td>
+                            <td>claude-3-opus</td>
+                            <td class="mono">47</td>
+                            <td class="mono">124,567</td>
+                            <td>2 分钟前</td>
+                        </tr>
+                        <tr>
+                            <td><span class="agent-name">agent-002</span></td>
+                            <td><span class="status-badge working">运行中</span></td>
+                            <td>gpt-4o</td>
+                            <td class="mono">32</td>
+                            <td class="mono">89,234</td>
+                            <td>5 分钟前</td>
+                        </tr>
+                        <tr>
+                            <td><span class="agent-name">agent-003</span></td>
+                            <td><span class="status-badge finished">已完成</span></td>
+                            <td>claude-3-sonnet</td>
+                            <td class="mono">128</td>
+                            <td class="mono">456,789</td>
+                            <td>15 分钟前</td>
+                        </tr>
+                        <tr>
+                            <td><span class="agent-name">agent-001</span></td>
+                            <td><span class="status-badge interrupted">中断</span></td>
+                            <td>claude-3-opus</td>
+                            <td class="mono">23</td>
+                            <td class="mono">67,890</td>
+                            <td>1 小时前</td>
+                        </tr>
+                        <tr>
+                            <td><span class="agent-name">agent-004</span></td>
+                            <td><span class="status-badge finished">已完成</span></td>
+                            <td>gemini-1.5-pro</td>
+                            <td class="mono">89</td>
+                            <td class="mono">234,567</td>
+                            <td>2 小时前</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        <!-- Charts Grid - Third Screen -->
+        <section class="charts-grid">
+            <div class="chart-card">
+                <h3 class="chart-card-title">模型调用分布</h3>
+                <div class="chart-placeholder">[环形图]</div>
+                <table class="model-stats-table">
+                    <thead>
+                        <tr>
+                            <th>模型</th>
+                            <th>调用</th>
+                            <th>输入</th>
+                            <th>输出</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><span class="model-name">claude-3-opus</span></td>
+                            <td class="mono">1,234</td>
+                            <td class="mono">892K</td>
+                            <td class="mono">234K</td>
+                        </tr>
+                        <tr>
+                            <td><span class="model-name">gpt-4o</span></td>
+                            <td class="mono">987</td>
+                            <td class="mono">567K</td>
+                            <td class="mono">189K</td>
+                        </tr>
+                        <tr>
+                            <td><span class="model-name">claude-3-sonnet</span></td>
+                            <td class="mono">756</td>
+                            <td class="mono">423K</td>
+                            <td class="mono">156K</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+            <div class="chart-card">
+                <h3 class="chart-card-title">Token 时间分布</h3>
+                <div class="chart-placeholder">[柱状图]</div>
+                <div style="display: flex; gap: 24px; margin-top: 16px; font-size: 13px;">
+                    <div>
+                        <span style="color: var(--text-muted);">总 Input:</span>
+                        <span class="mono" style="color: var(--accent-cyan);">1.9M</span>
+                    </div>
+                    <div>
+                        <span style="color: var(--text-muted);">总 Output:</span>
+                        <span class="mono" style="color: var(--accent-purple);">579K</span>
+                    </div>
+                    <div>
+                        <span style="color: var(--text-muted);">总调用:</span>
+                        <span class="mono">2,977</span>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Errors Section - Bottom -->
+        <section class="errors-section">
+            <div class="errors-header">
+                <h3 class="errors-title">模型错误</h3>
+                <span class="error-count mono">3</span>
+            </div>
+            <div class="error-item">
+                <div class="error-agent">agent-002 → gpt-4o</div>
+                <div class="error-message">Rate limit exceeded. Please retry after 20 seconds.</div>
+            </div>
+            <div class="error-item">
+                <div class="error-agent">agent-001 → claude-3-opus</div>
+                <div class="error-message">Context length exceeded: 200000 tokens</div>
+            </div>
+            <div class="error-item">
+                <div class="error-agent">agent-003 → claude-3-sonnet</div>
+                <div class="error-message">Overloaded. Please retry later.</div>
+            </div>
+        </section>
+    </main>
+
+    <footer>
+        OpenClaw OTel Monitor v0.2.0 · 方案 B 演示
+    </footer>
+</body>
+</html>
