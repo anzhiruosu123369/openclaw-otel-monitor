@@ -1281,20 +1281,38 @@ function updateTPMDisplay() {
 
     // 更新 TPM 柱状图（CSS bars）
     const chartContainer = document.getElementById('tpm-chart-bars');
+    const xAxisContainer = document.getElementById('tpm-chart-xaxis');
+    
     if (chartContainer) {
         if (tpm.tpm_timeseries && tpm.tpm_timeseries.length > 0) {
             const dataKey = metric === 'rate_limit' ? 'rate_limit_tpm' : 'actual_tpm';
             const data = tpm.tpm_timeseries.map(d => d[dataKey]);
+            const times = tpm.tpm_timeseries.map(d => d.minute);
             const maxTpm = Math.max(...data, 1);
             
             // 生成柱状图 bars
-            chartContainer.innerHTML = data.map(value => {
+            chartContainer.innerHTML = data.map((value, i) => {
                 const heightPercent = Math.max(4, (value / maxTpm) * 100);
-                return `<div class="chart-bar" style="height: ${heightPercent}%;" title="${formatNumber(value)} TPM"></div>`;
+                return `<div class="chart-bar" style="height: ${heightPercent}%;" title="${times[i]}\n${formatNumber(value)} TPM"></div>`;
             }).join('');
+            
+            // 生成 X 轴标签（只显示部分，避免太密集）
+            if (xAxisContainer) {
+                const totalPoints = times.length;
+                const labelInterval = Math.max(1, Math.floor(totalPoints / 6)); // 最多显示6个标签
+                xAxisContainer.innerHTML = times.map((time, i) => {
+                    if (i % labelInterval === 0 || i === totalPoints - 1) {
+                        // 提取时间部分 (HH:MM)
+                        const timePart = time.split(' ')[1] || time;
+                        return `<div class="xaxis-label">${timePart}</div>`;
+                    }
+                    return '<div class="xaxis-label"></div>';
+                }).join('');
+            }
         } else {
             // 无数据时显示提示
             chartContainer.innerHTML = '<div class="no-data-hint">选定时间范围内无 TPM 数据</div>';
+            if (xAxisContainer) xAxisContainer.innerHTML = '';
         }
     }
 }
