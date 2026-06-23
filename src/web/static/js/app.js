@@ -5,7 +5,6 @@ let ws = null;
 let dashboardData = {};
 let modelChart = null;
 let tokenDailyChart = null;
-let tpmChart = null;
 
 // Trace infinite scroll state
 let traceState = {
@@ -40,13 +39,6 @@ function setDefaultTimeFilters() {
         document.getElementById('session-date-start').value = today;
         document.getElementById('session-date-end').value = today;
     }
-    
-    // 模型错误筛选 - 设置今天
-    const errorTimeFilter = document.getElementById('error-time-filter');
-    if (errorTimeFilter && errorTimeFilter.value === 'today') {
-        document.getElementById('error-date-start').value = today;
-        document.getElementById('error-date-end').value = today;
-    }
 }
 
 // Setup event listeners
@@ -54,7 +46,6 @@ function setupEventListeners() {
     document.getElementById('status-filter').addEventListener('change', fetchSessions);
     document.getElementById('search-input').addEventListener('input', debounce(fetchSessions, 300));
     document.getElementById('session-agent-filter').addEventListener('change', fetchSessions);
-    document.getElementById('error-agent-filter').addEventListener('change', fetchErrors);
     document.getElementById('token-days-filter').addEventListener('change', (e) => {
         fetchTokenDailyData(parseInt(e.target.value));
     });
@@ -71,11 +62,6 @@ function setupEventListeners() {
     document.getElementById('session-time-filter').addEventListener('change', handleSessionTimeFilter);
     document.getElementById('session-date-start').addEventListener('change', fetchSessions);
     document.getElementById('session-date-end').addEventListener('change', fetchSessions);
-
-    // 模型错误时间筛选
-    document.getElementById('error-time-filter').addEventListener('change', handleErrorTimeFilter);
-    document.getElementById('error-date-start').addEventListener('change', fetchErrors);
-    document.getElementById('error-date-end').addEventListener('change', fetchErrors);
 }
 
 // 设置今天的日期作为默认值
@@ -124,45 +110,7 @@ function handleSessionTimeFilter() {
     fetchSessions();
 }
 
-// 处理错误时间筛选快捷选项
-function handleErrorTimeFilter() {
-    const timeFilter = document.getElementById('error-time-filter').value;
-    const dateStartInput = document.getElementById('error-date-start');
-    const dateEndInput = document.getElementById('error-date-end');
-    const today = new Date().toISOString().split('T')[0];
 
-    if (timeFilter === '') {
-        // 全部时间：清空日期并隐藏
-        dateStartInput.value = '';
-        dateEndInput.value = '';
-        dateStartInput.style.display = 'none';
-        dateEndInput.style.display = 'none';
-    } else if (timeFilter === 'today') {
-        // 今天：设置开始和结束为今天
-        dateStartInput.value = today;
-        dateEndInput.value = today;
-        dateStartInput.style.display = 'none';
-        dateEndInput.style.display = 'none';
-    } else if (timeFilter === 'custom') {
-        // 自定义范围：显示日期选择器
-        dateStartInput.style.display = 'inline-block';
-        dateEndInput.style.display = 'inline-block';
-        return; // 不自动触发筛选，等用户选择日期
-    } else {
-        // 最近N天：计算日期范围
-        const days = parseInt(timeFilter);
-        const endDate = new Date();
-        const startDate = new Date();
-        startDate.setDate(startDate.getDate() - days + 1);
-        
-        dateStartInput.value = startDate.toISOString().split('T')[0];
-        dateEndInput.value = endDate.toISOString().split('T')[0];
-        dateStartInput.style.display = 'none';
-        dateEndInput.style.display = 'none';
-    }
-
-    fetchErrors();
-}
 
 // Debounce helper
 function debounce(func, wait) {
@@ -308,71 +256,8 @@ function initCharts() {
         console.error('token-daily-chart canvas not found');
     }
 
-    // TPM chart (Line)
-    const tpmCanvas = document.getElementById('tpm-chart');
-    if (tpmCanvas) {
-        const tpmCtx = tpmCanvas.getContext('2d');
-        tpmChart = new Chart(tpmCtx, {
-            type: 'line',
-            data: {
-                labels: [],
-                datasets: [{
-                    label: 'TPM',
-                    data: [],
-                    borderColor: chartColors.primary,
-                    backgroundColor: chartColors.primaryLight,
-                    fill: true,
-                    tension: 0.4,
-                    pointRadius: 0,
-                    pointHoverRadius: 4,
-                    borderWidth: 2,
-                }]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                scales: {
-                    x: {
-                        ticks: { color: chartColors.text, maxRotation: 45, autoSkip: true, maxTicksLimit: 20, font: { size: 11 } },
-                        grid: { color: chartColors.grid }
-                    },
-                    y: {
-                        ticks: { color: chartColors.text, font: { size: 11 } },
-                        grid: { color: chartColors.grid },
-                        beginAtZero: true
-                    }
-                },
-                plugins: {
-                    legend: {
-                        labels: { 
-                            color: chartColors.textLight, 
-                            font: { size: 12, family: 'Inter' },
-                            usePointStyle: true,
-                            pointStyle: 'circle'
-                        }
-                    },
-                    tooltip: {
-                        backgroundColor: 'rgba(15, 15, 26, 0.9)',
-                        titleColor: '#fff',
-                        bodyColor: chartColors.text,
-                        borderColor: 'rgba(255, 255, 255, 0.1)',
-                        borderWidth: 1,
-                        padding: 12,
-                        cornerRadius: 8,
-                        callbacks: {
-                            label: function(context) {
-                                return 'TPM: ' + formatNumber(context.raw);
-                            }
-                        }
-                    }
-                },
-                interaction: {
-                    intersect: false,
-                    mode: 'index'
-                }
-            }
-        });
-    }
+    // TPM chart - 使用 CSS 柱状图替代 Chart.js
+    // 不需要初始化 Chart.js，改用 updateTPMChartBars 函数动态生成
 }
 
 // Fetch all data
@@ -380,11 +265,10 @@ async function fetchData() {
     try {
         const tpmHours = document.getElementById('tpm-hours-filter')?.value || 24;
         
-        const [dashboard, sessions, models, errors, tpm] = await Promise.all([
+        const [dashboard, sessions, models, tpm] = await Promise.all([
             fetchAPI('/api/dashboard'),
             fetchAPI('/api/sessions?limit=50'),
             fetchAPI('/api/models/stats'),
-            fetchAPI('/api/errors?limit=50&group_by=agent'),
             fetchAPI(`/api/tpm?hours=${tpmHours}`)
         ]);
 
@@ -393,20 +277,15 @@ async function fetchData() {
         updateSessionsTable(sessions);
         populateSessionFilters(sessions);
         updateModelsTable(models);
-        updateErrorsTable(errors);
-        populateErrorFilters(errors);
         updateTPMStats(tpm);
         
         // 应用默认的"今天"筛选
         const today = new Date().toISOString().split('T')[0];
         document.getElementById('session-date-start').value = today;
         document.getElementById('session-date-end').value = today;
-        document.getElementById('error-date-start').value = today;
-        document.getElementById('error-date-end').value = today;
         
         // 触发筛选
         fetchSessions();
-        fetchErrors();
     } catch (error) {
         console.error('Fetch error:', error);
     }
@@ -435,67 +314,7 @@ function populateSessionFilters(sessions) {
     tpmAgentFilter.innerHTML = agentOptions;
 }
 
-// Populate error filter dropdowns
-function populateErrorFilters(errors) {
-    const agentFilter = document.getElementById('error-agent-filter');
 
-    // Get unique agents from flat errors
-    const flatErrors = errors.flat || errors;
-    const agents = new Set();
-
-    flatErrors.forEach(e => {
-        if (e.agent_id) agents.add(e.agent_id);
-    });
-
-    // Populate agent filter
-    const sortedAgents = Array.from(agents).sort();
-    agentFilter.innerHTML = '<option value="">全部 Agent</option>' +
-        sortedAgents.map(a => `<option value="${a}">${a}</option>`).join('');
-}
-
-// Fetch errors with filters
-async function fetchErrors() {
-    const dateStart = document.getElementById('error-date-start').value;
-    const dateEnd = document.getElementById('error-date-end').value;
-    const agentFilter = document.getElementById('error-agent-filter').value;
-
-    console.log('fetchErrors called - dateStart:', dateStart, 'dateEnd:', dateEnd, 'agentFilter:', agentFilter);
-
-    let url = '/api/errors?limit=50&group_by=agent';
-
-    try {
-        let errors = await fetchAPI(url);
-        console.log('Fetched errors:', errors.total, 'total');
-
-        // Apply filters
-        if (dateStart || dateEnd || agentFilter) {
-            const filtered = [];
-            errors.grouped.forEach(group => {
-                const filteredErrors = group.errors.filter(e => {
-                    const errorDate = e.date;
-                    if (dateStart && errorDate < dateStart) return false;
-                    if (dateEnd && errorDate > dateEnd) return false;
-                    if (agentFilter && group.agent_id !== agentFilter) return false;
-                    return true;
-                });
-                if (filteredErrors.length > 0) {
-                    filtered.push({
-                        ...group,
-                        errors: filteredErrors,
-                        error_count: filteredErrors.length
-                    });
-                }
-            });
-            errors.grouped = filtered;
-            errors.total = filtered.reduce((sum, g) => sum + g.error_count, 0);
-            console.log('After filter:', errors.total, 'total');
-        }
-
-        updateErrorsTable(errors);
-    } catch (error) {
-        console.error('Fetch errors error:', error);
-    }
-}
 
 // Fetch sessions with filters
 async function fetchSessions() {
@@ -554,17 +373,20 @@ function updateDashboard(data) {
     const indicator = document.getElementById('gateway-indicator');
     const statusText = document.getElementById('gateway-status-text');
     const responseTime = document.getElementById('gateway-response-time');
+    const gatewayContainer = indicator?.closest('.gateway-status-inline');
 
     if (gateway.healthy) {
-        indicator.className = 'status-indicator healthy';
-        statusText.textContent = '运行正常';
+        indicator.className = 'status-dot';
+        if (gatewayContainer) gatewayContainer.classList.remove('unhealthy');
+        statusText.textContent = 'Gateway 正常';
     } else {
-        indicator.className = 'status-indicator unhealthy';
+        indicator.className = 'status-dot unhealthy';
+        if (gatewayContainer) gatewayContainer.classList.add('unhealthy');
         statusText.textContent = gateway.status || '离线';
     }
 
     responseTime.textContent = gateway.response_time_ms
-        ? `${gateway.response_time_ms.toFixed(1)} ms`
+        ? `${gateway.response_time_ms.toFixed(1)}ms`
         : '-';
 
     // Stats
@@ -586,7 +408,7 @@ function updateDashboard(data) {
 
     // Update last update time
     document.getElementById('last-update').textContent =
-        `更新于 ${new Date().toLocaleTimeString()}`;
+        new Date().toLocaleTimeString();
 }
 
 // Update sessions table
@@ -600,14 +422,36 @@ function updateSessionsTable(sessions) {
 
     tbody.innerHTML = sessions.map(s => `
         <tr class="clickable-row" onclick="showSessionDetail('${escapeHtml(s.session_key || '')}')">
-            <td>${escapeHtml(s.agent_id || '-')}</td>
-            <td><span class="status-cell ${s.status}">${s.status || '-'}</span></td>
-            <td>${escapeHtml(s.channel || '-')}</td>
+            <td><span class="agent-name">${escapeHtml(s.agent_id || '-')}</span></td>
+            <td><span class="status-badge ${getStatusClass(s.status)}">${getStatusText(s.status)}</span></td>
             <td>${escapeHtml(s.last_model || '-')}</td>
-            <td>${s.message_count || 0}</td>
+            <td class="mono">${s.message_count || 0}</td>
+            <td class="mono">${formatNumber(s.total_tokens || 0)}</td>
             <td>${formatTime(s.updated_at)}</td>
         </tr>
     `).join('');
+}
+
+// Get status class for badge
+function getStatusClass(status) {
+    const classMap = {
+        'WORKING': 'working',
+        'FINISHED': 'finished',
+        'INTERRUPTED': 'interrupted',
+        'NO_MESSAGE': 'interrupted'
+    };
+    return classMap[status] || 'finished';
+}
+
+// Get status text for badge
+function getStatusText(status) {
+    const textMap = {
+        'WORKING': '运行中',
+        'FINISHED': '已完成',
+        'INTERRUPTED': '中断',
+        'NO_MESSAGE': '无消息'
+    };
+    return textMap[status] || status || '-';
 }
 
 // Update models table
@@ -615,158 +459,21 @@ function updateModelsTable(models) {
     const tbody = document.getElementById('models-tbody');
 
     if (!models || models.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="6" class="loading">暂无模型数据</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="4" class="loading">暂无模型数据</td></tr>';
         return;
     }
 
     tbody.innerHTML = models.map(m => `
         <tr>
-            <td>${escapeHtml(m.model || '-')}</td>
-            <td>${escapeHtml(m.provider || '-')}</td>
-            <td>${formatNumber(m.total_calls || 0)}</td>
-            <td>${formatNumber(m.total_input_tokens || 0)}</td>
-            <td>${formatNumber(m.total_output_tokens || 0)}</td>
-            <td>${m.total_errors || 0}</td>
+            <td><span class="model-name">${escapeHtml(m.model || '-')}</span></td>
+            <td class="mono">${formatNumber(m.total_calls || 0)}</td>
+            <td class="mono">${formatNumber(m.total_input_tokens || 0)}</td>
+            <td class="mono">${formatNumber(m.total_output_tokens || 0)}</td>
         </tr>
     `).join('');
 }
 
-// Update errors table with grouping
-function updateErrorsTable(errors) {
-    const section = document.getElementById('errors-section');
-    const container = document.getElementById('errors-container');
-    const countBadge = document.getElementById('error-count');
 
-    // 始终显示错误模块
-    section.style.display = 'block';
-
-    if (!errors || (errors.grouped && errors.grouped.length === 0) || (!errors.grouped && errors.length === 0)) {
-        countBadge.textContent = '0';
-        container.innerHTML = '<div class="no-data">暂无模型错误记录</div>';
-        return;
-    }
-
-    // Handle grouped format
-    if (errors.grouped) {
-        countBadge.textContent = errors.total || 0;
-
-        container.innerHTML = errors.grouped.map(group => `
-            <div class="error-group">
-                <div class="error-group-header">
-                    <span class="agent-name">🤖 ${escapeHtml(group.agent_id)}</span>
-                    <span class="error-count-badge">${group.error_count} 个错误</span>
-                </div>
-                <table class="errors-table">
-                    <thead>
-                        <tr>
-                            <th>日期</th>
-                            <th>时间</th>
-                            <th>模型</th>
-                            <th>Provider</th>
-                            <th>错误信息</th>
-                            <th>会话</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        ${group.errors.slice(0, 5).map(e => `
-                            <tr>
-                                <td>${escapeHtml(e.date || '-')}</td>
-                                <td>${escapeHtml(e.time || '-')}</td>
-                                <td>${escapeHtml(e.model || '-')}</td>
-                                <td>${escapeHtml(e.provider || '-')}</td>
-                                <td class="error-message" title="${escapeHtml(e.error || '')}">${escapeHtml(e.error || '-')}</td>
-                                <td><a href="#" class="session-link" onclick="showSessionDetail('${escapeHtml(e.session_key || '')}'); return false;">查看详情</a></td>
-                            </tr>
-                        `).join('')}
-                        ${group.error_count > 5 ? `
-                            <tr class="more-errors">
-                                <td colspan="6" style="text-align: center; color: var(--text-muted);">
-                                    还有 ${group.error_count - 5} 个错误...
-                                    <a href="#" class="session-link" onclick="showAgentErrors('${escapeHtml(group.agent_id)}'); return false;">查看全部</a>
-                                </td>
-                            </tr>
-                        ` : ''}
-                    </tbody>
-                </table>
-            </div>
-        `).join('');
-    } else {
-        // Fallback to flat format (old API)
-        countBadge.textContent = errors.length;
-
-        container.innerHTML = `
-            <table class="errors-table">
-                <thead>
-                    <tr>
-                        <th>日期</th>
-                        <th>时间</th>
-                        <th>模型</th>
-                        <th>Provider</th>
-                        <th>错误信息</th>
-                        <th>会话</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    ${errors.map(e => `
-                        <tr>
-                            <td>${escapeHtml(e.date || '-')}</td>
-                            <td>${escapeHtml(e.time || '-')}</td>
-                            <td>${escapeHtml(e.model || '-')}</td>
-                            <td>${escapeHtml(e.provider || '-')}</td>
-                            <td class="error-message" title="${escapeHtml(e.error || '')}">${escapeHtml(e.error || '-')}</td>
-                            <td><a href="#" class="session-link" onclick="showSessionDetail('${escapeHtml(e.session_key || '')}'); return false;">查看详情</a></td>
-                        </tr>
-                    `).join('')}
-                </tbody>
-            </table>
-        `;
-    }
-}
-
-// Show agent errors modal
-function showAgentErrors(agentId) {
-    fetch(`/api/errors?limit=50&group_by=flat`)
-        .then(resp => resp.json())
-        .then(data => {
-            const errors = (data.flat || data).filter(e => e.agent_id === agentId);
-
-            const modal = document.getElementById('session-modal');
-            const content = document.getElementById('session-detail-content');
-
-            content.innerHTML = `
-                <div class="modal-header" style="margin-bottom: 15px;">
-                    <h3>🤖 ${escapeHtml(agentId)} 的所有错误</h3>
-                </div>
-                <div style="margin-bottom: 15px;">
-                    共 <strong>${errors.length}</strong> 个错误
-                </div>
-                <table class="errors-table">
-                    <thead>
-                        <tr>
-                            <th>日期</th>
-                            <th>时间</th>
-                            <th>模型</th>
-                            <th>Provider</th>
-                            <th>错误信息</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        ${errors.map(e => `
-                            <tr>
-                                <td>${escapeHtml(e.date || '-')}</td>
-                                <td>${escapeHtml(e.time || '-')}</td>
-                                <td>${escapeHtml(e.model || '-')}</td>
-                                <td>${escapeHtml(e.provider || '-')}</td>
-                                <td class="error-message" title="${escapeHtml(e.error || '')}">${escapeHtml(e.error || '-')}</td>
-                            </tr>
-                        `).join('')}
-                    </tbody>
-                </table>
-            `;
-
-            modal.style.display = 'flex';
-        });
-}
 
 // Show session detail modal
 function showSessionDetail(sessionKey) {
@@ -1333,12 +1040,15 @@ function connectWebSocket() {
 function updateGatewayStatus(data) {
     const indicator = document.getElementById('gateway-indicator');
     const statusText = document.getElementById('gateway-status-text');
+    const gatewayContainer = indicator?.closest('.gateway-status-inline');
 
     if (data.healthy) {
-        indicator.className = 'status-indicator healthy';
-        statusText.textContent = '运行正常';
+        indicator.className = 'status-dot';
+        if (gatewayContainer) gatewayContainer.classList.remove('unhealthy');
+        statusText.textContent = 'Gateway 正常';
     } else {
-        indicator.className = 'status-indicator unhealthy';
+        indicator.className = 'status-dot unhealthy';
+        if (gatewayContainer) gatewayContainer.classList.add('unhealthy');
         statusText.textContent = data.status || '离线';
     }
 }
@@ -1558,15 +1268,17 @@ function updateTPMDisplay() {
         peakTimeEl.textContent = '-';
     }
 
-    // 更新 TPM 图表
-    if (tpmChart && tpm.tpm_timeseries && tpm.tpm_timeseries.length > 0) {
-        const labels = tpm.tpm_timeseries.map(d => d.minute);
+    // 更新 TPM 柱状图（CSS bars）
+    const chartContainer = document.getElementById('tpm-chart-bars');
+    if (chartContainer && tpm.tpm_timeseries && tpm.tpm_timeseries.length > 0) {
         const dataKey = metric === 'rate_limit' ? 'rate_limit_tpm' : 'actual_tpm';
         const data = tpm.tpm_timeseries.map(d => d[dataKey]);
-
-        tpmChart.data.labels = labels;
-        tpmChart.data.datasets[0].data = data;
-        tpmChart.data.datasets[0].label = metric === 'rate_limit' ? '限流 TPM' : '实际消耗 TPM';
-        tpmChart.update();
+        const maxTpm = Math.max(...data, 1);
+        
+        // 生成柱状图 bars
+        chartContainer.innerHTML = data.map(value => {
+            const heightPercent = Math.max(4, (value / maxTpm) * 100);
+            return `<div class="chart-bar" style="height: ${heightPercent}%;" title="${formatNumber(value)} TPM"></div>`;
+        }).join('');
     }
 }

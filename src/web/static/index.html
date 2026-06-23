@@ -6,209 +6,129 @@
     <title>OpenClaw Monitor</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="/static/css/style.css">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 <body>
-    <div class="container">
-        <header>
-            <h1>
-                <span style="background: linear-gradient(135deg, #6366f1, #22d3ee); -webkit-background-clip: text; -webkit-text-fill-color: transparent; font-size: 28px;">🔍</span>
-                OpenClaw Monitor
-            </h1>
-            <div class="status-bar">
-                <span id="connection-status" class="status-badge">连接中...</span>
-                <span id="last-update">-</span>
+    <header>
+        <div class="logo">
+            <div class="logo-icon">◈</div>
+            <span class="logo-text">OpenClaw Monitor</span>
+        </div>
+        <div class="header-right">
+            <div class="gateway-status">
+                <span class="status-dot" id="gateway-indicator"></span>
+                <span id="gateway-status-text">检查中...</span>
+                <span class="response-time" id="gateway-response-time">-</span>
             </div>
-        </header>
+            <span class="last-update" id="last-update">-</span>
+        </div>
+    </header>
 
-        <main>
-            <!-- Gateway Status -->
-            <section class="card gateway-card">
-                <h2>Gateway 状态</h2>
-                <div class="gateway-info">
-                    <div class="gateway-status">
-                        <span class="status-indicator" id="gateway-indicator"></span>
-                        <span id="gateway-status-text">检查中...</span>
-                    </div>
-                    <div class="gateway-metrics">
-                        <div class="metric">
-                            <span class="metric-label">响应时间</span>
-                            <span class="metric-value" id="gateway-response-time">-</span>
-                        </div>
-                    </div>
-                </div>
-            </section>
+    <main class="container">
+        <!-- Stats Grid - First Screen -->
+        <section class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-label">总会话数</div>
+                <div class="stat-value mono" id="total-sessions">0</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label">活跃会话</div>
+                <div class="stat-value mono" id="active-sessions">0</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label">Token 总量</div>
+                <div class="stat-value mono" id="total-tokens">0</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label">使用模型数</div>
+                <div class="stat-value mono" id="model-count">0</div>
+            </div>
+        </section>
 
-            <!-- Quick Stats -->
-            <section class="stats-grid">
-                <div class="stat-card">
-                    <div class="stat-value" id="total-sessions">0</div>
-                    <div class="stat-label">总会话数</div>
+        <!-- TPM Section - Real-time Monitor -->
+        <section class="tpm-section">
+            <div class="tpm-header">
+                <span class="tpm-title">⚡ TPM 实时监控</span>
+                <div class="tpm-filters">
+                    <select class="filter-select" id="tpm-agent-filter">
+                        <option value="">全部 Agent</option>
+                    </select>
+                    <select class="filter-select" id="tpm-hours-filter">
+                        <option value="1">最近 1 小时</option>
+                        <option value="6">最近 6 小时</option>
+                        <option value="12">最近 12 小时</option>
+                        <option value="24" selected>最近 24 小时</option>
+                        <option value="48">最近 48 小时</option>
+                        <option value="168">最近 7 天</option>
+                    </select>
+                    <select class="filter-select" id="tpm-metric-filter">
+                        <option value="rate_limit">限流 TPM</option>
+                        <option value="actual">实际消耗 TPM</option>
+                    </select>
                 </div>
-                <div class="stat-card">
-                    <div class="stat-value" id="active-sessions">0</div>
-                    <div class="stat-label">活跃会话</div>
-                </div>
-                <div class="stat-card">
-                    <div class="stat-value" id="total-tokens">0</div>
-                    <div class="stat-label">Token 总量</div>
-                </div>
-                <div class="stat-card">
-                    <div class="stat-value" id="model-count">0</div>
-                    <div class="stat-label">使用模型数</div>
-                </div>
-            </section>
-
-            <!-- TPM Stats -->
-            <section class="card tpm-card">
-                <div class="card-header">
-                    <h2>⚡ TPM 统计</h2>
-                    <div class="filters">
-                        <select id="tpm-agent-filter">
-                            <option value="">全部 Agent</option>
-                        </select>
-                        <select id="tpm-hours-filter">
-                            <option value="1">最近 1 小时</option>
-                            <option value="6">最近 6 小时</option>
-                            <option value="12">最近 12 小时</option>
-                            <option value="24" selected>最近 24 小时</option>
-                            <option value="48">最近 48 小时</option>
-                            <option value="168">最近 7 天</option>
-                            <option value="720">最近 30 天</option>
-                        </select>
-                        <select id="tpm-metric-filter">
-                            <option value="rate_limit">限流 TPM (input+output)</option>
-                            <option value="actual">实际消耗 TPM (含缓存)</option>
-                        </select>
-                    </div>
-                </div>
-                <div class="tpm-stats-info" style="margin-bottom: 15px; padding: 10px; background: rgba(255,255,255,0.05); border-radius: 8px; font-size: 13px; color: var(--text-muted);">
-                    <span id="tpm-metric-desc">限流 TPM = 新处理 tokens (input + output)，用于对齐提供商 TPM 限额</span>
-                </div>
-                <div class="tpm-stats-grid">
-                    <div class="tpm-stat-item">
+            </div>
+            <div class="tpm-body">
+                <div class="tpm-stats">
+                    <div class="tpm-stat">
                         <div class="tpm-stat-label">高峰 TPM</div>
-                        <div class="tpm-stat-value peak" id="peak-tpm">0</div>
-                        <div class="tpm-stat-time" id="peak-tpm-time">-</div>
+                        <div class="tpm-stat-value peak mono" id="peak-tpm">0</div>
+                        <div class="tpm-stat-meta" id="peak-tpm-time">-</div>
                     </div>
-                    <div class="tpm-stat-item">
+                    <div class="tpm-stat">
                         <div class="tpm-stat-label">平均 TPM</div>
-                        <div class="tpm-stat-value avg" id="avg-tpm">0</div>
-                        <div class="tpm-stat-time">活跃 <span id="active-minutes">0</span> 分钟</div>
+                        <div class="tpm-stat-value avg mono" id="avg-tpm">0</div>
+                        <div class="tpm-stat-meta">活跃 <span id="active-minutes">0</span> 分钟</div>
                     </div>
-                    <div class="tpm-stat-item">
+                    <div class="tpm-stat">
                         <div class="tpm-stat-label">当前 TPM</div>
-                        <div class="tpm-stat-value current" id="current-tpm">0</div>
-                        <div class="tpm-stat-time">最近一分钟</div>
+                        <div class="tpm-stat-value current mono" id="current-tpm">0</div>
+                        <div class="tpm-stat-meta">最近一分钟</div>
                     </div>
                 </div>
-                <div class="chart-container" style="height: 250px; margin-top: 20px;">
-                    <canvas id="tpm-chart"></canvas>
+                <div class="tpm-chart" id="tpm-chart-bars">
+                    <!-- Dynamic chart bars -->
                 </div>
-            </section>
+            </div>
+        </section>
 
-            <!-- Model Distribution Chart -->
-            <section class="card">
-                <h2>🤖 模型调用分布</h2>
-                <div class="chart-container" style="height: 300px;">
-                    <canvas id="model-chart"></canvas>
+        <!-- Sessions Table - Second Screen -->
+        <section>
+            <div class="section-header">
+                <h2 class="section-title">会话列表</h2>
+                <div class="section-filters">
+                    <select class="filter-select" id="session-time-filter">
+                        <option value="">全部时间</option>
+                        <option value="today" selected>今天</option>
+                        <option value="7">最近7天</option>
+                        <option value="30">最近30天</option>
+                        <option value="custom">自定义范围</option>
+                    </select>
+                    <input type="date" class="filter-select" id="session-date-start" style="display:none" title="开始日期">
+                    <input type="date" class="filter-select" id="session-date-end" style="display:none" title="结束日期">
+                    <select class="filter-select" id="status-filter">
+                        <option value="">全部状态</option>
+                        <option value="WORKING">运行中</option>
+                        <option value="FINISHED">已完成</option>
+                        <option value="INTERRUPTED">中断</option>
+                        <option value="NO_MESSAGE">无消息</option>
+                    </select>
+                    <select class="filter-select" id="session-agent-filter">
+                        <option value="">全部 Agent</option>
+                    </select>
+                    <input type="text" class="search-input" id="search-input" placeholder="搜索会话...">
                 </div>
-            </section>
-
-            <!-- Token Time Distribution Chart -->
-            <section class="card">
-                <div class="card-header">
-                    <h2>📊 Token 时间分布</h2>
-                    <div class="filters">
-                        <select id="token-days-filter">
-                            <option value="1">最近 24 小时</option>
-                            <option value="7" selected>最近 7 天</option>
-                            <option value="14">最近 14 天</option>
-                            <option value="30">最近 30 天</option>
-                            <option value="60">最近 60 天</option>
-                            <option value="90">最近 90 天</option>
-                        </select>
-                    </div>
-                </div>
-                <div class="chart-container" style="height: 300px;">
-                    <canvas id="token-daily-chart"></canvas>
-                </div>
-                <div class="token-summary" id="token-summary" style="display: none;">
-                    <div class="summary-item">
-                        <span class="summary-label">总 Input:</span>
-                        <span class="summary-value" id="total-input">0</span>
-                    </div>
-                    <div class="summary-item">
-                        <span class="summary-label">总 Output:</span>
-                        <span class="summary-value" id="total-output">0</span>
-                    </div>
-                    <div class="summary-item">
-                        <span class="summary-label">总调用:</span>
-                        <span class="summary-value" id="total-calls">0</span>
-                    </div>
-                </div>
-            </section>
-
-            <!-- Errors Section -->
-            <section class="card errors-card" id="errors-section" style="display: none;">
-                <div class="card-header">
-                    <h2>⚠️ 模型错误 <span id="error-count" class="error-badge"></span></h2>
-                    <div class="filters">
-                        <select id="error-time-filter">
-                            <option value="">全部时间</option>
-                            <option value="today" selected>今天</option>
-                            <option value="7">最近7天</option>
-                            <option value="30">最近30天</option>
-                            <option value="custom">自定义范围</option>
-                        </select>
-                        <input type="date" id="error-date-start" style="display:none" title="开始日期">
-                        <input type="date" id="error-date-end" style="display:none" title="结束日期">
-                        <select id="error-agent-filter">
-                            <option value="">全部 Agent</option>
-                        </select>
-                    </div>
-                </div>
-                <div id="errors-container">
-                </div>
-            </section>
-
-            <!-- Sessions Table -->
-            <section class="card">
-                <div class="card-header">
-                    <h2>📋 会话列表</h2>
-                    <div class="filters">
-                        <select id="session-time-filter">
-                            <option value="">全部时间</option>
-                            <option value="today" selected>今天</option>
-                            <option value="7">最近7天</option>
-                            <option value="30">最近30天</option>
-                            <option value="custom">自定义范围</option>
-                        </select>
-                        <input type="date" id="session-date-start" style="display:none" title="开始日期">
-                        <input type="date" id="session-date-end" style="display:none" title="结束日期">
-                        <select id="status-filter">
-                            <option value="">全部状态</option>
-                            <option value="WORKING">运行中</option>
-                            <option value="FINISHED">已完成</option>
-                            <option value="INTERRUPTED">中断</option>
-                            <option value="NO_MESSAGE">无消息</option>
-                        </select>
-                        <select id="session-agent-filter">
-                            <option value="">全部 Agent</option>
-                        </select>
-                        <input type="text" id="search-input" placeholder="搜索会话...">
-                    </div>
-                </div>
-                <table class="sessions-table">
+            </div>
+            <div class="table-container">
+                <table>
                     <thead>
                         <tr>
                             <th>Agent</th>
                             <th>状态</th>
-                            <th>通道</th>
                             <th>模型</th>
                             <th>消息数</th>
+                            <th>Tokens</th>
                             <th>更新时间</th>
                         </tr>
                     </thead>
@@ -218,70 +138,103 @@
                         </tr>
                     </tbody>
                 </table>
-            </section>
+            </div>
+        </section>
 
-            <!-- Model Stats -->
-            <section class="card">
-                <h2>🤖 模型统计</h2>
-                <table class="models-table">
+        <!-- Charts Grid - Third Screen -->
+        <section class="charts-grid">
+            <div class="chart-card">
+                <h3 class="chart-card-title">模型调用分布</h3>
+                <div class="chart-placeholder">
+                    <canvas id="model-chart"></canvas>
+                </div>
+                <table class="model-stats-table">
                     <thead>
                         <tr>
                             <th>模型</th>
-                            <th>Provider</th>
-                            <th>调用次数</th>
-                            <th>输入 Tokens</th>
-                            <th>输出 Tokens</th>
-                            <th>错误数</th>
+                            <th>调用</th>
+                            <th>输入</th>
+                            <th>输出</th>
                         </tr>
                     </thead>
                     <tbody id="models-tbody">
                         <tr>
-                            <td colspan="6" class="loading">加载中...</td>
+                            <td colspan="4" class="loading">加载中...</td>
                         </tr>
                     </tbody>
                 </table>
-            </section>
-        </main>
-
-        <!-- Session Detail Modal -->
-        <div id="session-modal" class="modal" style="display: none;">
-            <div class="modal-content">
-                <div class="modal-header-fixed">
-                    <h3>📝 会话详情</h3>
-                    <button class="close-btn" onclick="closeModal()">×</button>
+            </div>
+            <div class="chart-card">
+                <div class="card-header-no-border">
+                    <h3 class="chart-card-title">Token 时间分布</h3>
+                    <select class="filter-select" id="token-days-filter">
+                        <option value="1">最近 24 小时</option>
+                        <option value="7" selected>最近 7 天</option>
+                        <option value="14">最近 14 天</option>
+                        <option value="30">最近 30 天</option>
+                    </select>
                 </div>
-
-                <div class="session-tabs-fixed">
-                    <button class="tab-btn active" onclick="switchTab('overview', this)">概览</button>
-                    <button class="tab-btn" onclick="switchTab('trace', this)">Trace</button>
-                    <button class="tab-btn" onclick="switchTab('tokens', this)">Token</button>
+                <div class="chart-placeholder">
+                    <canvas id="token-daily-chart"></canvas>
                 </div>
-
-                <div class="modal-body" id="session-modal-body">
-                    <div id="tab-overview" class="tab-content active">
+                <div class="token-summary-inline">
+                    <div>
+                        <span class="summary-label">总 Input:</span>
+                        <span class="summary-value cyan mono" id="total-input">0</span>
                     </div>
-
-                    <div id="tab-trace" class="tab-content">
-                        <div class="trace-timeline" id="trace-timeline"></div>
-                        <div id="trace-loading" class="trace-loading" style="display: none;">
-                            <span class="loading-spinner"></span> 正在加载中...
-                        </div>
-                        <div id="trace-end" class="trace-end" style="display: none;">
-                            没有更多数据了
-                        </div>
+                    <div>
+                        <span class="summary-label">总 Output:</span>
+                        <span class="summary-value purple mono" id="total-output">0</span>
                     </div>
-
-                    <div id="tab-tokens" class="tab-content">
+                    <div>
+                        <span class="summary-label">总调用:</span>
+                        <span class="summary-value mono" id="total-calls">0</span>
                     </div>
                 </div>
             </div>
-        </div>
+        </section>
 
-        <footer>
-            <p>OpenClaw OTel Monitor v0.1.0 · Built with ❤️</p>
-        </footer>
+
+    </main>
+
+    <!-- Session Detail Modal -->
+    <div id="session-modal" class="modal" style="display: none;">
+        <div class="modal-content">
+            <div class="modal-header-fixed">
+                <h3>📝 会话详情</h3>
+                <button class="close-btn" onclick="closeModal()">×</button>
+            </div>
+
+            <div class="session-tabs-fixed">
+                <button class="tab-btn active" onclick="switchTab('overview', this)">概览</button>
+                <button class="tab-btn" onclick="switchTab('trace', this)">Trace</button>
+                <button class="tab-btn" onclick="switchTab('tokens', this)">Token</button>
+            </div>
+
+            <div class="modal-body" id="session-modal-body">
+                <div id="tab-overview" class="tab-content active">
+                </div>
+
+                <div id="tab-trace" class="tab-content">
+                    <div class="trace-timeline" id="trace-timeline"></div>
+                    <div id="trace-loading" class="trace-loading" style="display: none;">
+                        <span class="loading-spinner"></span> 正在加载中...
+                    </div>
+                    <div id="trace-end" class="trace-end" style="display: none;">
+                        没有更多数据了
+                    </div>
+                </div>
+
+                <div id="tab-tokens" class="tab-content">
+                </div>
+            </div>
+        </div>
     </div>
 
-    <script src="/static/js/app.js?v=13"></script>
+    <footer>
+        OpenClaw OTel Monitor v0.2.0
+    </footer>
+
+    <script src="/static/js/app.js?v=17"></script>
 </body>
 </html>
