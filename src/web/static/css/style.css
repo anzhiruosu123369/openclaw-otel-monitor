@@ -550,6 +550,12 @@ td {
     color: var(--accent-purple);
 }
 
+.token-summary-inline .summary-unit {
+    color: var(--text-muted);
+    font-size: 12px;
+    margin-left: 2px;
+}
+
 /* ========== Loading ========== */
 .loading {
     text-align: center;
