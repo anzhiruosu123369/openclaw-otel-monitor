@@ -304,7 +304,7 @@ main {
 }
 
 .tpm-chart {
-    padding: 16px;
+    padding: 16px 16px 0 16px;
     display: flex;
     align-items: flex-end;
     gap: 2px;
@@ -327,7 +327,7 @@ main {
 .tpm-chart-xaxis {
     display: flex;
     gap: 2px;
-    padding: 4px 16px 12px 16px;
+    padding: 6px 16px;
     border-top: 1px solid var(--border-color);
 }
 
