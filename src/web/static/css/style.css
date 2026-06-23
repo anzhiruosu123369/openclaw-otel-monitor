@@ -205,6 +205,8 @@ main {
     align-items: center;
     padding: 16px 20px;
     border-bottom: 1px solid var(--border-color);
+    position: relative;
+    z-index: 10;
 }
 
 .tpm-title {
@@ -216,6 +218,8 @@ main {
 .tpm-filters {
     display: flex;
     gap: 8px;
+    position: relative;
+    z-index: 20;
 }
 
 .filter-select {
