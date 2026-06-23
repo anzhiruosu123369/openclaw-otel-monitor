@@ -987,8 +987,11 @@ function connectWebSocket() {
     ws = new WebSocket(wsUrl);
 
     ws.onopen = () => {
-        document.getElementById('connection-status').textContent = '已连接';
-        document.getElementById('connection-status').className = 'status-badge connected';
+        const statusEl = document.getElementById('connection-status');
+        if (statusEl) {
+            statusEl.textContent = '已连接';
+            statusEl.className = 'status-badge connected';
+        }
 
         // Subscribe to updates
         ws.send(JSON.stringify({
@@ -998,8 +1001,11 @@ function connectWebSocket() {
     };
 
     ws.onclose = () => {
-        document.getElementById('connection-status').textContent = '已断开';
-        document.getElementById('connection-status').className = 'status-badge error';
+        const statusEl = document.getElementById('connection-status');
+        if (statusEl) {
+            statusEl.textContent = '已断开';
+            statusEl.className = 'status-badge error';
+        }
 
         // Reconnect after 5 seconds
         setTimeout(connectWebSocket, 5000);
@@ -1240,6 +1246,8 @@ function updateTPMMetricDesc() {
     const metric = document.getElementById('tpm-metric-filter').value;
     const descEl = document.getElementById('tpm-metric-desc');
     
+    if (!descEl) return;  // 元素不存在则跳过
+    
     if (metric === 'rate_limit') {
         descEl.textContent = '限流 TPM = 新处理 tokens (input + output)，用于对齐提供商 TPM 限额';
     } else {
@@ -1270,15 +1278,20 @@ function updateTPMDisplay() {
 
     // 更新 TPM 柱状图（CSS bars）
     const chartContainer = document.getElementById('tpm-chart-bars');
-    if (chartContainer && tpm.tpm_timeseries && tpm.tpm_timeseries.length > 0) {
-        const dataKey = metric === 'rate_limit' ? 'rate_limit_tpm' : 'actual_tpm';
-        const data = tpm.tpm_timeseries.map(d => d[dataKey]);
-        const maxTpm = Math.max(...data, 1);
-        
-        // 生成柱状图 bars
-        chartContainer.innerHTML = data.map(value => {
-            const heightPercent = Math.max(4, (value / maxTpm) * 100);
-            return `<div class="chart-bar" style="height: ${heightPercent}%;" title="${formatNumber(value)} TPM"></div>`;
-        }).join('');
+    if (chartContainer) {
+        if (tpm.tpm_timeseries && tpm.tpm_timeseries.length > 0) {
+            const dataKey = metric === 'rate_limit' ? 'rate_limit_tpm' : 'actual_tpm';
+            const data = tpm.tpm_timeseries.map(d => d[dataKey]);
+            const maxTpm = Math.max(...data, 1);
+            
+            // 生成柱状图 bars
+            chartContainer.innerHTML = data.map(value => {
+                const heightPercent = Math.max(4, (value / maxTpm) * 100);
+                return `<div class="chart-bar" style="height: ${heightPercent}%;" title="${formatNumber(value)} TPM"></div>`;
+            }).join('');
+        } else {
+            // 无数据时显示提示
+            chartContainer.innerHTML = '<div class="no-data-hint">选定时间范围内无 TPM 数据</div>';
+        }
     }
 }
