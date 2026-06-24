@@ -334,6 +334,13 @@ main {
     transition: opacity 0.2s;
 }
 
+.chart-bar-zero {
+    min-height: 2px;
+    background: rgba(100, 116, 139, 0.2);
+    border-radius: 2px 2px 0 0;
+    flex: 1;
+}
+
 .chart-bar:hover {
     opacity: 0.8;
     background: var(--accent-cyan);
@@ -1156,6 +1163,35 @@ td {
     word-break: break-word;
 }
 
+/* ========== Connection Status ========== */
+.connection-status {
+    font-size: 12px;
+    color: var(--text-muted);
+    padding: 3px 10px;
+    border-radius: 6px;
+    background: rgba(100, 116, 139, 0.1);
+}
+
+.connection-status.connected {
+    color: var(--accent-green);
+    background: rgba(52, 211, 153, 0.15);
+}
+
+.connection-status.error {
+    color: var(--accent-red);
+    background: rgba(248, 113, 113, 0.15);
+}
+
+/* ========== Text Ellipsis ========== */
+.text-ellipsis {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 100%;
+    display: inline-block;
+    vertical-align: middle;
+}
+
 /* ========== Footer ========== */
 footer {
     text-align: center;
@@ -1193,7 +1229,7 @@ footer {
     }
     
     .header-right {
-        gap: 12px;
+        gap: 8px;
     }
     
     .last-update {
@@ -1206,5 +1242,77 @@ footer {
     
     .tpm-filters {
         flex-wrap: wrap;
+    }
+
+    .modal-content {
+        width: 96%;
+        height: 92vh;
+        border-radius: 12px;
+    }
+
+    .modal-body {
+        padding: 16px;
+    }
+
+    .tpm-stat-value {
+        font-size: 24px;
+    }
+
+    .tpm-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 8px;
+    }
+}
+
+@media (max-width: 480px) {
+    .stats-grid {
+        gap: 12px;
+    }
+
+    .stat-value {
+        font-size: 28px;
+    }
+
+    .section-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 8px;
+    }
+
+    .search-input {
+        width: 140px;
+    }
+
+    .tpm-stats {
+        flex-wrap: wrap;
+        gap: 4px;
+    }
+
+    .tpm-stat {
+        flex: 1 1 40%;
+    }
+
+    .token-summary-inline {
+        flex-direction: column;
+        gap: 8px;
+    }
+
+    .detail-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .token-stats {
+        flex-direction: column;
+        gap: 12px;
+    }
+
+    .gateway-status {
+        font-size: 11px;
+        padding: 4px 8px;
+    }
+
+    .connection-status {
+        display: none;
     }
 }

@@ -5,20 +5,21 @@ let ws = null;
 let dashboardData = {};
 let modelChart = null;
 let tokenDailyChart = null;
+let wsReconnectTimer = null;
 
 // Trace infinite scroll state
 let traceState = {
     sessionKey: null,
     events: [],
     offset: 0,
-    limit: 20,
+    limit: 50,
     hasMore: true,
     isLoading: false
 };
 
 // Initialize
 document.addEventListener('DOMContentLoaded', () => {
-    initCharts();
+    safeInitCharts();
     fetchData();
     connectWebSocket();
     setupEventListeners();
@@ -263,6 +264,20 @@ function initCharts() {
     // 不需要初始化 Chart.js，改用 updateTPMChartBars 函数动态生成
 }
 
+// Guard: run initCharts only if Chart.js loaded and canvases exist
+function safeInitCharts() {
+    if (typeof Chart === 'undefined') {
+        console.warn('Chart.js not loaded, skipping chart init');
+        return;
+    }
+    const modelCanvas = document.getElementById('model-chart');
+    if (!modelCanvas || !modelCanvas.getContext) {
+        console.warn('model-chart canvas not found');
+        return;
+    }
+    initCharts();
+}
+
 // Fetch all data
 async function fetchData() {
     try {
@@ -280,15 +295,13 @@ async function fetchData() {
         updateSessionsTable(sessions);
         populateSessionFilters(sessions);
         updateModelsTable(models);
-        updateTPMStats(tpm);
+        window.tpmData = tpm;
+        updateTPMDisplay();
         
-        // 应用默认的"今天"筛选
+        // 应用默认的"今天"筛选（仅设置日期，不触发二次 fetch）
         const today = new Date().toISOString().split('T')[0];
         document.getElementById('session-date-start').value = today;
         document.getElementById('session-date-end').value = today;
-        
-        // 触发筛选
-        fetchSessions();
     } catch (error) {
         console.error('Fetch error:', error);
     }
@@ -376,7 +389,7 @@ function updateDashboard(data) {
     const indicator = document.getElementById('gateway-indicator');
     const statusText = document.getElementById('gateway-status-text');
     const responseTime = document.getElementById('gateway-response-time');
-    const gatewayContainer = indicator?.closest('.gateway-status-inline');
+    const gatewayContainer = indicator?.closest('.gateway-status');
 
     if (gateway.healthy) {
         indicator.className = 'status-dot';
@@ -487,8 +500,8 @@ function showSessionDetail(sessionKey) {
         sessionKey: sessionKey,
         events: [],
         offset: 0,
-        limit: 50,  // 从 20 增加到 50
-        totalEvents: 0,  // 总事件数
+        limit: 50,
+        totalEvents: 0,
         hasMore: true,
         isLoading: false
     };
@@ -704,14 +717,14 @@ function renderExpandableContent(content, className) {
     const isLong = content.length > maxLength;
     const displayContent = isLong ? content.slice(0, maxLength) + '...' : content;
 
-    // Store full content in a data attribute (escaped for HTML attribute)
-    const escapedFull = escapeHtml(content).replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+    // Store full content URI-encoded (safe for any special chars in HTML attr)
+    const encoded = encodeURIComponent(content);
 
     return `
-        <div class="${className} ${isLong ? 'collapsed' : ''}" data-full="${escapedFull}">
+        <div class="${className} ${isLong ? 'collapsed' : ''}">
             ${escapeHtml(isLong ? displayContent : content)}
         </div>
-        ${isLong ? `<button class="trace-expand-btn" onclick="toggleTraceContent(this)">展开全部</button>` : ''}
+        ${isLong ? `<button class="trace-expand-btn" data-full="${encoded}" onclick="toggleTraceContent(this)">展开全部</button>` : ''}
     `;
 }
 
@@ -719,19 +732,14 @@ function renderExpandableContent(content, className) {
 function toggleTraceContent(btn) {
     const contentDiv = btn.previousElementSibling;
     const isCollapsed = contentDiv.classList.contains('collapsed');
+    const fullText = decodeURIComponent(btn.dataset.full);
 
     if (isCollapsed) {
         contentDiv.classList.remove('collapsed');
-        // Decode from HTML entities back to text
-        const textarea = document.createElement('textarea');
-        textarea.innerHTML = contentDiv.dataset.full;
-        contentDiv.textContent = textarea.value;
+        contentDiv.textContent = fullText;
         btn.textContent = '收起';
     } else {
         contentDiv.classList.add('collapsed');
-        const textarea = document.createElement('textarea');
-        textarea.innerHTML = contentDiv.dataset.full;
-        const fullText = textarea.value;
         contentDiv.textContent = fullText.slice(0, 500) + '...';
         btn.textContent = '展开全部';
     }
@@ -753,7 +761,7 @@ function renderOverviewTab(data) {
             <div class="detail-grid">
                 <div class="detail-row"><span class="detail-label">Session Key:</span> <span class="detail-value text-ellipsis">${escapeHtml(data.session_key || '-')}</span></div>
                 <div class="detail-row"><span class="detail-label">Agent:</span> <span class="detail-value">${escapeHtml(data.agent_id || '-')}</span></div>
-                <div class="detail-row"><span class="detail-label">状态:</span> <span class="status-cell ${data.status}">${data.status || '-'}</span></div>
+                <div class="detail-row"><span class="detail-label">状态:</span> <span class="status-badge ${getStatusClass(data.status)}">${getStatusText(data.status)}</span></div>
                 <div class="detail-row"><span class="detail-label">通道:</span> <span class="detail-value">${escapeHtml(data.channel || '-')}</span></div>
                 <div class="detail-row"><span class="detail-label">消息数:</span> <span class="detail-value">${data.message_count || 0}</span></div>
                 <div class="detail-row"><span class="detail-label">更新时间:</span> <span class="detail-value">${formatTime(data.updated_at)}</span></div>
@@ -985,6 +993,15 @@ function closeModal() {
 let lastSessionUpdate = 0;  // 用于节流
 
 function connectWebSocket() {
+    // 清理旧连接
+    if (ws && ws.readyState === WebSocket.OPEN) {
+        ws.close();
+    }
+    if (wsReconnectTimer) {
+        clearTimeout(wsReconnectTimer);
+        wsReconnectTimer = null;
+    }
+
     const wsUrl = `ws://${location.host}/api/ws`;
 
     ws = new WebSocket(wsUrl);
@@ -993,7 +1010,7 @@ function connectWebSocket() {
         const statusEl = document.getElementById('connection-status');
         if (statusEl) {
             statusEl.textContent = '已连接';
-            statusEl.className = 'status-badge connected';
+            statusEl.className = 'connection-status connected';
         }
 
         // Subscribe to updates
@@ -1007,11 +1024,11 @@ function connectWebSocket() {
         const statusEl = document.getElementById('connection-status');
         if (statusEl) {
             statusEl.textContent = '已断开';
-            statusEl.className = 'status-badge error';
+            statusEl.className = 'connection-status error';
         }
 
         // Reconnect after 5 seconds
-        setTimeout(connectWebSocket, 5000);
+        wsReconnectTimer = setTimeout(connectWebSocket, 5000);
     };
 
     ws.onerror = (error) => {
@@ -1049,7 +1066,7 @@ function connectWebSocket() {
 function updateGatewayStatus(data) {
     const indicator = document.getElementById('gateway-indicator');
     const statusText = document.getElementById('gateway-status-text');
-    const gatewayContainer = indicator?.closest('.gateway-status-inline');
+    const gatewayContainer = indicator?.closest('.gateway-status');
 
     if (data.healthy) {
         indicator.className = 'status-dot';
@@ -1218,12 +1235,8 @@ function updateTokenDailyChart(data) {
     }
 }
 
-// Update TPM statistics (legacy - now handled by updateTPMDisplay)
-function updateTPMStats(tpm) {
-    window.tpmData = tpm;
-    updateTPMMetricDesc();
-    updateTPMDisplay();
-}
+// TPM data version guard against stale async responses
+let tpmDataVersion = 0;
 
 // Fetch TPM data with filters
 async function fetchTPMData() {
@@ -1236,7 +1249,10 @@ async function fetchTPMData() {
             url += `&agent_id=${encodeURIComponent(agentId)}`;
         }
         const tpm = await fetchAPI(url);
-        window.tpmData = tpm;  // Store globally for metric switching
+        // Stale response guard
+        const thisVersion = ++tpmDataVersion;
+        if (thisVersion !== tpmDataVersion) return;
+        window.tpmData = tpm;
         updateTPMMetricDesc();
         updateTPMDisplay();
     } catch (error) {
@@ -1300,9 +1316,10 @@ function updateTPMDisplay() {
             const times = tpm.tpm_timeseries.map(d => d.minute);
             const maxTpm = Math.max(...data, 1);
             
-            // 生成柱状图 bars
+            // 生成柱状图 bars - 有值的才渲染
             chartContainer.innerHTML = data.map((value, i) => {
-                const heightPercent = Math.max(4, (value / maxTpm) * 100);
+                if (value === 0) return '<div class="chart-bar chart-bar-zero"></div>';
+                const heightPercent = (value / maxTpm) * 100;
                 return `<div class="chart-bar" style="height: ${heightPercent}%;" title="${times[i]}\n${formatNumber(value)} TPM"></div>`;
             }).join('');
             
