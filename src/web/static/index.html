@@ -68,6 +68,8 @@
                     <select class="filter-select" id="tpm-metric-filter">
                         <option value="rate_limit">限流 TPM</option>
                         <option value="actual">实际消耗 TPM</option>
+                        <option value="input">Input TPM</option>
+                        <option value="output">Output TPM</option>
                     </select>
                 </div>
             </div>
@@ -87,6 +89,15 @@
                         <div class="tpm-stat-label">当前 TPM</div>
                         <div class="tpm-stat-value current mono" id="current-tpm">0</div>
                         <div class="tpm-stat-meta">最近一分钟</div>
+                    </div>
+                    <div class="tpm-stat-divider"></div>
+                    <div class="tpm-stat tpm-stat-input">
+                        <div class="tpm-stat-label">高峰 Input</div>
+                        <div class="tpm-stat-value mono" id="peak-input-tpm">0</div>
+                    </div>
+                    <div class="tpm-stat tpm-stat-output">
+                        <div class="tpm-stat-label">高峰 Output</div>
+                        <div class="tpm-stat-value mono" id="peak-output-tpm">0</div>
                     </div>
                 </div>
                 <div class="tpm-chart-wrapper">
@@ -245,6 +256,6 @@
         OpenClaw OTel Monitor v0.2.0
     </footer>
 
-    <script src="/static/js/app.js?v=32"></script>
+    <script src="/static/js/app.js?v=33"></script>
 </body>
 </html>

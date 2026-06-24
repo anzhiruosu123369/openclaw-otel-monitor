@@ -1246,16 +1246,7 @@ async function fetchTPMData() {
 
 // Update TPM metric description
 function updateTPMMetricDesc() {
-    const metric = document.getElementById('tpm-metric-filter').value;
-    const descEl = document.getElementById('tpm-metric-desc');
-    
-    if (!descEl) return;  // 元素不存在则跳过
-    
-    if (metric === 'rate_limit') {
-        descEl.textContent = '限流 TPM = 新处理 tokens (input + output)，用于对齐提供商 TPM 限额';
-    } else {
-        descEl.textContent = '实际消耗 TPM = totalTokens (含 cacheRead)，反映真实全部消耗';
-    }
+    // 不再需要显示描述
 }
 
 // Update TPM display based on selected metric
@@ -1279,13 +1270,32 @@ function updateTPMDisplay() {
         peakTimeEl.textContent = '-';
     }
 
+    // 更新 Input/Output TPM 独立统计
+    const inputStats = tpm.input || {};
+    const outputStats = tpm.output || {};
+    document.getElementById('peak-input-tpm').textContent = formatNumber(inputStats.peak_tpm || 0);
+    document.getElementById('peak-output-tpm').textContent = formatNumber(outputStats.peak_tpm || 0);
+
     // 更新 TPM 柱状图（CSS bars）
     const chartContainer = document.getElementById('tpm-chart-bars');
     const xAxisContainer = document.getElementById('tpm-chart-xaxis');
     
     if (chartContainer) {
         if (tpm.tpm_timeseries && tpm.tpm_timeseries.length > 0) {
-            const dataKey = metric === 'rate_limit' ? 'rate_limit_tpm' : 'actual_tpm';
+            // 根据筛选选择数据源
+            let dataKey;
+            if (metric === 'rate_limit') {
+                dataKey = 'rate_limit_tpm';
+            } else if (metric === 'actual') {
+                dataKey = 'actual_tpm';
+            } else if (metric === 'input') {
+                dataKey = 'input_tpm';
+            } else if (metric === 'output') {
+                dataKey = 'output_tpm';
+            } else {
+                dataKey = 'rate_limit_tpm';
+            }
+            
             const data = tpm.tpm_timeseries.map(d => d[dataKey]);
             const times = tpm.tpm_timeseries.map(d => d.minute);
             const maxTpm = Math.max(...data, 1);

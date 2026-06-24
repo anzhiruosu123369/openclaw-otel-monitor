@@ -420,16 +420,18 @@ class SessionCollector:
         self._running = False
 
     async def get_tpm_stats(self, hours: int = 24, agent_id: Optional[str] = None) -> Dict[str, Any]:
-        """Calculate Tokens Per Minute statistics with two metrics.
+        """Calculate Tokens Per Minute statistics with input/output breakdown.
         
         Args:
             hours: Number of hours to analyze (default 24)
             agent_id: Optional agent filter
             
         Returns:
-            Dict with two TPM metrics:
+            Dict with TPM metrics:
             - rate_limit_tpm: input + output (for provider rate limiting)
             - actual_tpm: totalTokens (actual consumption including cache)
+            - input_tpm: input tokens per minute
+            - output_tpm: output tokens per minute
         """
         from datetime import timedelta
         
@@ -521,22 +523,36 @@ class SessionCollector:
                     'active_minutes': 0,
                     'peak_time': None,
                 },
+                'input': {
+                    'peak_tpm': 0,
+                    'avg_tpm': 0,
+                    'current_tpm': 0,
+                    'peak_time': None,
+                },
+                'output': {
+                    'peak_tpm': 0,
+                    'avg_tpm': 0,
+                    'current_tpm': 0,
+                    'peak_time': None,
+                },
                 'tpm_timeseries': [],
             }
         
         # Sort by timestamp
         token_events.sort(key=lambda x: x['timestamp'])
         
-        # Calculate TPM per minute bucket for both metrics
-        minute_buckets = {}  # minute_str -> {rate_limit: N, actual: N}
+        # Calculate TPM per minute bucket for all metrics
+        minute_buckets = {}  # minute_str -> {rate_limit: N, actual: N, input: N, output: N}
         
         for event in token_events:
             # Round down to minute
             minute_key = event['timestamp'].strftime('%Y-%m-%d %H:%M')
             if minute_key not in minute_buckets:
-                minute_buckets[minute_key] = {'rate_limit': 0, 'actual': 0}
+                minute_buckets[minute_key] = {'rate_limit': 0, 'actual': 0, 'input': 0, 'output': 0}
             minute_buckets[minute_key]['rate_limit'] += event['rate_limit_tokens']
             minute_buckets[minute_key]['actual'] += event['total_tokens']
+            minute_buckets[minute_key]['input'] += event['input_tokens']
+            minute_buckets[minute_key]['output'] += event['output_tokens']
         
         # Build time series
         tpm_timeseries = []
@@ -545,9 +561,11 @@ class SessionCollector:
                 'minute': minute_str,
                 'rate_limit_tpm': tokens['rate_limit'],
                 'actual_tpm': tokens['actual'],
+                'input_tpm': tokens['input'],
+                'output_tpm': tokens['output'],
             })
         
-        # Calculate statistics for both metrics
+        # Calculate statistics for all metrics
         def calc_stats(tsm_key):
             values = [d[tsm_key] for d in tpm_timeseries]
             if not values:
@@ -568,10 +586,14 @@ class SessionCollector:
         
         rate_limit_stats = calc_stats('rate_limit_tpm')
         actual_stats = calc_stats('actual_tpm')
+        input_stats = calc_stats('input_tpm')
+        output_stats = calc_stats('output_tpm')
         
         return {
             'rate_limit': rate_limit_stats,
             'actual': actual_stats,
+            'input': input_stats,
+            'output': output_stats,
             'active_minutes': len(tpm_timeseries),
             'tpm_timeseries': tpm_timeseries,
         }
