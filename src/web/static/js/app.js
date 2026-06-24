@@ -290,30 +290,17 @@ function initTPMTrendChart() {
         type: 'line',
         data: {
             labels: [],
-            datasets: [
-                {
-                    label: '限流 TPM',
-                    data: [],
-                    borderColor: '#22d3ee',
-                    backgroundColor: 'rgba(34, 211, 238, 0.08)',
-                    fill: true,
-                    tension: 0.3,
-                    pointRadius: 2,
-                    pointHoverRadius: 4,
-                    borderWidth: 1.5,
-                },
-                {
-                    label: '实际 TPM',
-                    data: [],
-                    borderColor: '#34d399',
-                    backgroundColor: 'rgba(52, 211, 153, 0.08)',
-                    fill: true,
-                    tension: 0.3,
-                    pointRadius: 2,
-                    pointHoverRadius: 4,
-                    borderWidth: 1.5,
-                }
-            ]
+            datasets: [{
+                label: 'TPM',
+                data: [],
+                borderColor: '#22d3ee',
+                backgroundColor: 'rgba(34, 211, 238, 0.08)',
+                fill: true,
+                tension: 0.3,
+                pointRadius: 2,
+                pointHoverRadius: 4,
+                borderWidth: 1.5,
+            }]
         },
         options: {
             responsive: true,
@@ -1426,23 +1413,32 @@ function updateTPMDisplay() {
         }
     }
 
-    // Update TPM trend line chart
+    // Update TPM trend line chart (single line matching current metric filter)
     if (tpmTrendChart && tpm.tpm_timeseries && tpm.tpm_timeseries.length > 0) {
         const times = tpm.tpm_timeseries.map(d => {
             const t = d.minute || '';
             return t.split(' ')[1] || t;
         });
-        const rateLimitData = tpm.tpm_timeseries.map(d => d.rate_limit_tpm || 0);
-        const actualData = tpm.tpm_timeseries.map(d => d.actual_tpm || 0);
+        let trendKey;
+        const metricVal = document.getElementById('tpm-metric-filter')?.value || 'rate_limit';
+        if (metricVal === 'rate_limit') trendKey = 'rate_limit_tpm';
+        else if (metricVal === 'actual') trendKey = 'actual_tpm';
+        else if (metricVal === 'input') trendKey = 'input_tpm';
+        else if (metricVal === 'output') trendKey = 'output_tpm';
+        else trendKey = 'rate_limit_tpm';
+
+        const lineData = tpm.tpm_timeseries.map(d => d[trendKey] || 0);
 
         tpmTrendChart.data.labels = times;
-        tpmTrendChart.data.datasets[0].data = rateLimitData;
-        tpmTrendChart.data.datasets[1].data = actualData;
+        tpmTrendChart.data.datasets[0].data = lineData;
+        const metricText = document.getElementById('tpm-metric-filter')?.selectedOptions?.[0]?.text || 'TPM';
+        tpmTrendChart.data.datasets[0].label = metricText;
+        const legendLabel = document.getElementById('trend-metric-label');
+        if (legendLabel) legendLabel.textContent = metricText;
         tpmTrendChart.update('none');
     } else if (tpmTrendChart) {
         tpmTrendChart.data.labels = [];
         tpmTrendChart.data.datasets[0].data = [];
-        tpmTrendChart.data.datasets[1].data = [];
         tpmTrendChart.update('none');
     }
 }
