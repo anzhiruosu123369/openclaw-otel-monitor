@@ -6,6 +6,7 @@ let dashboardData = {};
 let modelChart = null;
 let tokenDailyChart = null;
 let wsReconnectTimer = null;
+let tpmTrendChart = null;
 
 // Trace infinite scroll state
 let traceState = {
@@ -276,6 +277,88 @@ function safeInitCharts() {
         return;
     }
     initCharts();
+    initTPMTrendChart();
+}
+
+// Initialize TPM trend line chart
+function initTPMTrendChart() {
+    const canvas = document.getElementById('tpm-trend-chart');
+    if (!canvas) return;
+
+    const ctx = canvas.getContext('2d');
+    tpmTrendChart = new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: [],
+            datasets: [
+                {
+                    label: '限流 TPM',
+                    data: [],
+                    borderColor: '#22d3ee',
+                    backgroundColor: 'rgba(34, 211, 238, 0.08)',
+                    fill: true,
+                    tension: 0.3,
+                    pointRadius: 2,
+                    pointHoverRadius: 4,
+                    borderWidth: 1.5,
+                },
+                {
+                    label: '实际 TPM',
+                    data: [],
+                    borderColor: '#34d399',
+                    backgroundColor: 'rgba(52, 211, 153, 0.08)',
+                    fill: true,
+                    tension: 0.3,
+                    pointRadius: 2,
+                    pointHoverRadius: 4,
+                    borderWidth: 1.5,
+                }
+            ]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: { display: false },
+                tooltip: {
+                    backgroundColor: 'rgba(15, 15, 26, 0.9)',
+                    titleColor: '#fff',
+                    bodyColor: '#94a3b8',
+                    borderColor: 'rgba(255, 255, 255, 0.1)',
+                    borderWidth: 1,
+                    padding: 10,
+                    cornerRadius: 8,
+                }
+            },
+            scales: {
+                x: {
+                    display: true,
+                    ticks: {
+                        color: '#64748b',
+                        font: { size: 10, family: 'JetBrains Mono' },
+                        maxTicksLimit: 8,
+                    },
+                    grid: { display: false }
+                },
+                y: {
+                    display: true,
+                    ticks: {
+                        color: '#64748b',
+                        font: { size: 10 },
+                        maxTicksLimit: 4,
+                    },
+                    grid: {
+                        color: 'rgba(255, 255, 255, 0.04)',
+                    },
+                    beginAtZero: true
+                }
+            },
+            interaction: {
+                intersect: false,
+                mode: 'index',
+            }
+        }
+    });
 }
 
 // Fetch all data
@@ -1341,5 +1424,25 @@ function updateTPMDisplay() {
             chartContainer.innerHTML = '<div class="no-data-hint">选定时间范围内无 TPM 数据</div>';
             if (xAxisContainer) xAxisContainer.innerHTML = '';
         }
+    }
+
+    // Update TPM trend line chart
+    if (tpmTrendChart && tpm.tpm_timeseries && tpm.tpm_timeseries.length > 0) {
+        const times = tpm.tpm_timeseries.map(d => {
+            const t = d.minute || '';
+            return t.split(' ')[1] || t;
+        });
+        const rateLimitData = tpm.tpm_timeseries.map(d => d.rate_limit_tpm || 0);
+        const actualData = tpm.tpm_timeseries.map(d => d.actual_tpm || 0);
+
+        tpmTrendChart.data.labels = times;
+        tpmTrendChart.data.datasets[0].data = rateLimitData;
+        tpmTrendChart.data.datasets[1].data = actualData;
+        tpmTrendChart.update('none');
+    } else if (tpmTrendChart) {
+        tpmTrendChart.data.labels = [];
+        tpmTrendChart.data.datasets[0].data = [];
+        tpmTrendChart.data.datasets[1].data = [];
+        tpmTrendChart.update('none');
     }
 }

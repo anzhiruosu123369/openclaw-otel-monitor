@@ -318,12 +318,71 @@ main {
     flex-direction: column;
 }
 
+.tpm-bars-area {
+    flex-shrink: 0;
+}
+
 .tpm-chart {
     padding: 16px 16px 0 16px;
     display: flex;
     align-items: flex-end;
     gap: 2px;
-    height: 160px;
+    height: 220px;
+}
+
+/* TPM Trend Chart (bottom half) */
+.tpm-trend-area {
+    border-top: 1px solid var(--border-color);
+    padding: 12px 16px;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+}
+
+.tpm-trend-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 8px;
+}
+
+.tpm-trend-title {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.tpm-trend-legend {
+    display: flex;
+    gap: 12px;
+    font-size: 11px;
+    color: var(--text-muted);
+}
+
+.trend-legend-item {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.legend-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    display: inline-block;
+}
+
+.tpm-trend-chart-container {
+    flex: 1;
+    min-height: 100px;
+    position: relative;
+}
+
+.tpm-trend-chart-container canvas {
+    width: 100% !important;
+    height: 100% !important;
 }
 
 .chart-bar {
@@ -1221,6 +1280,10 @@ footer {
         flex-direction: row;
         justify-content: space-around;
     }
+
+    .tpm-chart {
+        height: 160px;
+    }
 }
 
 @media (max-width: 768px) {
@@ -1261,6 +1324,19 @@ footer {
     .tpm-header {
         flex-direction: column;
         align-items: flex-start;
+        gap: 8px;
+    }
+
+    .tpm-chart {
+        height: 140px;
+    }
+
+    .tpm-trend-chart-container {
+        min-height: 70px;
+    }
+
+    .tpm-trend-legend {
+        font-size: 10px;
         gap: 8px;
     }
 }

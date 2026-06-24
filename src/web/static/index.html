@@ -102,11 +102,25 @@
                     </div>
                 </div>
                 <div class="tpm-chart-wrapper">
-                    <div class="tpm-chart" id="tpm-chart-bars">
-                        <!-- Dynamic chart bars -->
+                    <div class="tpm-bars-area">
+                        <div class="tpm-chart" id="tpm-chart-bars">
+                            <!-- Dynamic chart bars -->
+                        </div>
+                        <div class="tpm-chart-xaxis" id="tpm-chart-xaxis">
+                            <!-- X axis labels -->
+                        </div>
                     </div>
-                    <div class="tpm-chart-xaxis" id="tpm-chart-xaxis">
-                        <!-- X axis labels -->
+                    <div class="tpm-trend-area">
+                        <div class="tpm-trend-header">
+                            <span class="tpm-trend-title">TPM 趋势</span>
+                            <span class="tpm-trend-legend">
+                                <span class="trend-legend-item"><span class="legend-dot" style="background:#22d3ee"></span>限流</span>
+                                <span class="trend-legend-item"><span class="legend-dot" style="background:#34d399"></span>实际</span>
+                            </span>
+                        </div>
+                        <div class="tpm-trend-chart-container">
+                            <canvas id="tpm-trend-chart"></canvas>
+                        </div>
                     </div>
                 </div>
             </div>
