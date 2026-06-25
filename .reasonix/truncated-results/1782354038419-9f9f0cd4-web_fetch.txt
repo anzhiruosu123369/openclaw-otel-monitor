@@ -1,0 +1,173 @@
+Token &amp; Cost Tracking - Langfuse
+https://langfuse.com/docs/observability/features/token-and-cost-tracking
+
+<!DOCTYPE html>Token & Cost Tracking - Langfuse
+
+DocsToken & Cost Tracking
+
+Token & Cost Tracking
+
+DocsObservabilityFeaturesToken & Cost Tracking
+
+Copy page
+
+Model Usage & Cost Tracking
+
+Langfuse tracks the usage and costs of your LLM generations and provides breakdowns by usage types. Usage and cost can be tracked on observations of type generation and embedding.
+
+Usage details: number of units consumed per usage type
+
+Cost details: USD cost per usage type
+
+Usage types can be arbitrary strings and differ by LLM provider. At the highest level, they can be simply input and output. As LLMs grow more sophisticated, additional usage types are necessary, such as cached_tokens, audio_tokens, image_tokens.
+
+In the UI, Langfuse summarizes all usage types that include the string input as input usage types, similarlyoutput as output usage types. If no total usage type is ingested, Langfuse sums up all usage type units to a total.
+
+Both usage details and cost details can be either
+
+ingested via API, SDKs or integrations
+
+or inferred based on the model parameter of the generation. Langfuse comes with a list of predefined popular models and their tokenizers including OpenAI, Anthropic, and Google models. You can also add your own custom model definitions or request official support for new models via GitHub. Inferred cost are calculated at the time of ingestion with the model and price information available at that point in time.
+
+Ingested usage and cost are prioritized over inferred usage and cost:
+
+Via the Metrics API, you can retrieve aggregated usage and cost metrics from Langfuse for downstream use in analytics, billing, and rate-limiting. The API allows you to filter by application type, user, or tags.
+
+Ingest usage and/or cost
+
+If available in the LLM response, ingesting usage and/or cost is the most accurate and robust way to track usage in Langfuse.
+
+Many of the Langfuse integrations automatically capture usage details and cost details data from the LLM response. If this does not work as expected, please create an issue on GitHub.
+
+Python SDKJS/TS SDK
+
+When using the @observe() decorator:
+
+<code><span class="line"><span style="--shiki-light:#F85E84;--shiki-dark:#F92672">from</span><span style="--shiki-light:#2D2A2E;--shiki-dark:#F8F8F2"> langfuse </span><span style="--shiki-light:#F85E84;--shiki-dark:#F92672">import</span><span style="--shiki-light:#2D2A2E;--shiki-dark:#F8F8F2"> observe, get_client</span></span>
+<span class="line"><span style="--shiki-light:#F85E84;--shiki-dark:#F92672">import</span><span style="--shiki-light:#2D2A2E;--shiki-dark:#F8F8F2"> anthropic</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#2D2A2E;--shiki-dark:#F8F8F2">langfuse </span><span style="--shiki-light:#F85E84;--shiki-dark:#F92672">=</span><span style="--shiki-light:#2D2A2E;--shiki-dark:#F8F8F2"> get_client()</span></span>
+<span class="line"><span style="--shiki-light:#2D2A2E;--shiki-dark:#F8F8F2">anthropic_client </span><span style="--shiki-light:#F85E84;--shiki-dark:#F92672">=</span><span style="--shiki-light:#2D2A2E;--shiki-dark:#F8F8F2"> anthropic.Anthropic()</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#2D2A2E;--shiki-dark:#A6E22E">@</span><span style="--shiki-light:#78A855;--shiki-dark:#A6E22E">observe</span><span style="--shiki-light:#2D2A2E;--shiki-dark:#F8F8F2">(</span><span style="--shiki-light:#2D2A2E;--shiki-light-font-style:inherit;--shiki-dark:#FD971F;--shiki-dark-font-style:italic">as_type</span><span style="--shiki-light:#F85E84;--shiki-dark:#F92672">=</span><span style="--shiki-light:#B58900;--shiki-dark:#E6DB74">"generation"</span><span style="--shiki-light:#2D2A2E;--shiki-dark:#F8F8F2">)</span></span>
+<span class="line"><span style="--shiki-light:#F85E84;--shiki-light-font-style:inherit;--shiki-dark:#66D9EF;--shiki-dark-font-style:italic">def</span><span style="--shiki-light:#78A855;--shiki-dark:#A6E22E"> anthropic_completion</span><span style="--shiki-light:#2D2A2E;--shiki-dark:#F8F8F2">(</span><span style="--shiki-light:#F85E84;--shiki-dark:#F92672">**</span><span style="--shiki-light:#2D2A2E;--shiki-light-font-style:inherit;--shiki-dark:#FD971F;--shiki-dark-font-style:italic">kwargs</span><span style="--shiki-light:#2D2A2E;--shiki-dark:#F8F8F2">):</span></span>
+<span class="line"><span style="--shiki-light:#9D9D9D;--shiki-light-font-style:italic;--shiki-dark:#88846F;--shiki-dark-font-style:inherit"> # optional, extract some fields from kwargs</span></span>
+<span class="line"><span style="--shiki-light:#2D2A2E;--shiki-dark:#F8F8F2"> kwargs_clone </span><span style="--shiki-light:#F85E84;--shiki-dark:#F92672">=</span><span style="--shiki-light:#2D2A2E;--shiki-dark:#F8F8F2"> kwargs.copy()</span></span>
+<span class="line"><span style="--shiki-light:#78A855;--shiki-dark:#66D9EF"> input</span><span style="--shiki-light:#F85E84;--shiki-dark:#F92672"> =</span><span style="--shiki-light:#2D2A2E;--shiki-dark:#F8F8F2"> kwargs_clone.pop(</span><span style="--shiki-light:#B58900;--shiki-dark:#E6DB74">'messages'</span><span style="--shiki-light:#2D2A2E;--shiki-dark:#F8F8F2">, </span><span style="--shiki-light:#FC9867;--shiki-dark:#AE81FF">None</span><span style="--shiki-light:#2D2A2E;--shiki-dark:#F8F8F2">)</span></span>
+<span class="line"><span style="--shiki-light:#2D2A2E;--shiki-dark:#F8F8F2"> model </span><span style="--shiki-light:#F85E84;--shiki-dark:#F92672">=</span><span style="--shiki-light:#2D2A2E;--shiki-dark:#F8F8F2"> kwargs_clone.pop(</span><span style="--shiki-light:#B58900;--shiki-dark:#E6DB74">'model'</span><span style="--shiki-light:#2D2A2E;--shiki-dark:#F8F8F2">, </span><span style="--shiki-light:#FC9867;--shiki-dark:#AE81FF">None</span><span style="--shiki-light:#2D2A2E;--shiki-dark:#F8F8F2">)</span></span>
+<span class="line"><span style="--shiki-light:#2D2A2E;--shiki-dark:#F8F8F2"> langfuse.update_current_generation(</span></span>
+<span class="line"><span style="--shiki-light:#2D2A2E;--shiki-light-font-style:inherit;--shiki-dark:#FD971F;--shiki-dark-font-style:italic"> input</span><span style="--shiki-light:#F85E84;--shiki-dark:#F92672">=</span><span style="--shiki-light:#78A855;--shiki-dark:#66D9EF">input</span><span style="--shiki-light:#2D2A2E;--shiki-dark:#F8F8F2">,</span></span>
+<span class="line"><span style="--shiki-light:#2D2A2E;--shiki-light-font-style:inherit;--shiki-dark:#FD971F;--shiki-dark-font-style:italic"> model</span><span style="--shiki-light:#F85E84;--shiki-dark:#F92672">=</span><span style="--shiki-light:#2D2A2E;--shiki-dark:#F8F8F2">model,</span></span>
+<span class="line"><span style="--shiki-light:#2D2A2E;--shiki-light-font-style:inherit;--shiki-dark:#FD971F;--shiki-dark-font-style:italic"> metadata</span><span style="--shiki-light:#F85E84;--shiki-dark:#F92672">=</span><span style="--shiki-light:#2D2A2E;--shiki-dark:#F8F8F2">kwargs_clone</span></span>
+<span class="line"><span style="--shiki-light:#2D2A2E;--shiki-dark:#F8F8F2"> )</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#2D2A2E;--shiki-dark:#F8F8F2"> response </span><span style="--shiki-light:#F85E84;--shiki-dark:#F92672">=</span><span style="--shiki-light:#2D2A2E;--shiki-dark:#F8F8F2"> anthropic_client.messages.create(</span><span style="--shiki-light:#F85E84;--shiki-dark:#F92672">**</span><span style="--shiki-light:#2D2A2E;--shiki-dark:#F8F8F2">kwargs)</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#2D2A2E;--shiki-dark:#F8F8F2"> langfuse.update_current_generation(</span></span>
+<span class="line"><span style="--shiki-light:#2D2A2E;--shiki-light-font-style:inherit;--shiki-dark:#FD971F;--shiki-dark-font-style:italic"> usage_details</span><span style="--shiki-light:#F85E84;--shiki-dark:#F92672">=</span><span style="--shiki-light:#2D2A2E;--shiki-dark:#F8F8F2">{</span></span>
+<span class="line"><span style="--shiki-light:#B58900;--shiki-dark:#E6DB74"> "input"</span><span style="--shiki-light:#2D2A2E;--shiki-dark:#F8F8F2">: response.usage.input_tokens,</span></span>
+<span class="line"><span style="--shiki-light:#B58900;--shiki-dark:#E6DB74"> "output"</span><span style="--shiki-light:#2D2A2E;--shiki-dark:#F8F8F2">: response.usage.output_tokens,</span></span>
+<span class="line"><span style="--shiki-light:#B58900;--shiki-dark:#E6DB74"> "cache_read_input_tokens"</span><span style="--shiki-light:#2D2A2E;--shiki-dark:#F8F8F2">: response.usage.cache_read_input_tokens</span></span>
+<span class="line"><span style="--shiki-light:#9D9D9D;--shiki-light-font-style:italic;--shiki-dark:#88846F;--shiki-dark-font-style:inherit"> # "total": int, # if not set, it is derived from input + cache_read_input_tokens + output</span></span>
+<span class="line"><span style="--shiki-light:#2D2A2E;--shiki-dark:#F8F8F2"> },</span></span>
+<span class="line"><span style="--shiki-light:#9D9D9D;--shiki-light-font-style:italic;--shiki-dark:#88846F;--shiki-dark-font-style:inherit"> # Optionally, also ingest usd cost. Alternatively, you can infer it via a model definition in Langfuse.</span></span>
+<span class="line"><span style="--shiki-light:#2D2A2E;--shiki-light-font-style:inherit;--shiki-dark:#FD971F;--shiki-dark-font-style:italic"> cost_details</span><span style="--shiki-light:#F85E84;--shiki-dark:#F92672">=</span><span style="--shiki-light:#2D2A2E;--shiki-dark:#F8F8F2">{</span></span>
+<span class="line"><span style="--shiki-light:#9D9D9D;--shiki-light-font-style:italic;--shiki-dark:#88846F;--shiki-dark-font-style:inherit"> # Here we assume the input and output cost are 1 USD each and half the price for cached tokens.</span></span>
+<span class="line"><span style="--shiki-light:#B58900;--shiki-dark:#E6DB74"> "input"</span><span style="--shiki-light:#2D2A2E;--shiki-dark:#F8F8F2">: </span><span style="--shiki-light:#9A7EE6;--shiki-dark:#AE81FF">1</span><span style="--shiki-light:#2D2A2E;--shiki-dark:#F8F8F2">,</span></span>
+<span class="line"><span style="--shiki-light:#B58900;--shiki-dark:#E6DB74"> "cache_read_input_tokens"</span><span style="--shiki-light:#2D2A2E;--shiki-dark:#F8F8F2">: </span><span style="--shiki-light:#9A7EE6;--shiki-dark:#AE81FF">0.5</span><span style="--shiki-light:#2D2A2E;--shiki-dark:#F8F8F2">,</span></span>
+<span class="line"><span style="--shiki-light:#B58900;--shiki-dark:#E6DB74"> "output"</span><span style="--shiki-light:#2D2A2E;--shiki-dark:#F8F8F2">: </span><span style="--shiki-light:#9A7EE6;--shiki-dark:#AE81FF">1</span><span style="--shiki-light:#2D2A2E;--shiki-dark:#F8F8F2">,</span></span>
+<span class="line"><span style="--shiki-light:#9D9D9D;--shiki-light-font-style:italic;--shiki-dark:#88846F;--shiki-dark-font-style:inherit"> # "total": float, # if not set, it is derived from input + cache_read_input_tokens + output</span></span>
+<span class="line"><span style="--shiki-light:#2D2A2E;--shiki-dark:#F8F8F2"> }</span></span>
+<span class="line"><span style="--shiki-light:#2D2A2E;--shiki-dark:#F8F8F2"> )</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#9D9D9D;--shiki-light-font-style:italic;--shiki-dark:#88846F;--shiki-dark-font-style:inherit"> # return result</span></span>
+<span class="line"><span style="--shiki-light:#F85E84;--shiki-dark:#F92672"> return</span><span style="--shiki-light:#2D2A2E;--shiki-dark:#F8F8F2"> response.content[</span><span style="--shiki-light:#9A7EE6;--shiki-dark:#AE81FF">0</span><span style="--shiki-light:#2D2A2E;--shiki-dark:#F8F8F2">].text</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#2D2A2E;--shiki-dark:#A6E22E">@</span><span style="--shiki-light:#78A855;--shiki-dark:#A6E22E">observe</span><span style="--shiki-light:#2D2A2E;--shiki-dark:#F8F8F2">()</span></span>
+<span class="line"><span style="--shiki-light:#F85E84;--shiki-light-font-style:inherit;--shiki-dark:#66D9EF;--shiki-dark-font-style:italic">def</span><span style="--shiki-light:#78A855;--shiki-dark:#A6E22E"> main</span><span style="--shiki-light:#2D2A2E;--shiki-dark:#F8F8F2">():</span></span>
+<span class="line"><span style="--shiki-light:#F85E84;--shiki-dark:#F92672"> return</span><span style="--shiki-light:#2D2A2E;--shiki-dark:#F8F8F2"> anthropic_completion(</span></span>
+<span class="line"><span style="--shiki-light:#2D2A2E;--shiki-light-font-style:inherit;--shiki-dark:#FD971F;--shiki-dark-font-style:italic"> model</span><span style="--shiki-light:#F85E84;--shiki-dark:#F92672">=</span><span style="--shiki-light:#B58900;--shiki-dark:#E6DB74">"claude-3-opus-20240229"</span><span style="--shiki-light:#2D2A2E;--shiki-dark:#F8F8F2">,</span></span>
+<span class="line"><span style="--shiki-light:#2D2A2E;--shiki-light-font-style:inherit;--shiki-dark:#FD971F;--shiki-dark-font-style:italic"> max_tokens</span><span style="--shiki-light:#F85E84;--shiki-dark:#F92672">=</span><span style="--shiki-light:#9A7EE6;--shiki-dark:#AE81FF">1024</span><span style="--shiki-light:#2D2A2E;--shiki-dark:#F8F8F2">,</span></span>
+<span class="line"><span style="--shiki-light:#2D2A2E;--shiki-light-font-style:inherit;--shiki-dark:#FD971F;--shiki-dark-font-style:italic"> messages</span><span style="--shiki-light:#F85E84;--shiki-dark:#F92672">=</span><span style="--shiki-light:#2D2A2E;--shiki-dark:#F8F8F2">[</span></span>
+<span class="line"><span style="--shiki-light:#2D2A2E;--shiki-dark:#F8F8F2"> {</span><span style="--shiki-light:#B58900;--shiki-dark:#E6DB74">"role"</span><span style="--shiki-light:#2D2A2E;--shiki-dark:#F8F8F2">: </span><span style="--shiki-light:#B58900;--shiki-dark:#E6DB74">"user"</span><span style="--shiki-light:#2D2A2E;--shiki-dark:#F8F8F2">, </span><span style="--shiki-light:#B58900;--shiki-dark:#E6DB74">"content"</span><span style="--shiki-light:#2D2A2E;--shiki-dark:#F8F8F2">: </span><span style="--shiki-light:#B58900;--shiki-dark:#E6DB74">"Hello, Claude"</span><span style="--shiki-light:#2D2A2E;--shiki-dark:#F8F8F2">}</span></span>
+<span class="line"><span style="--shiki-light:#2D2A2E;--shiki-dark:#F8F8F2"> ]</span></span>
+<span class="line"><span style="--shiki-light:#2D2A2E;--shiki-dark:#F8F8F2"> )</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#2D2A2E;--shiki-dark:#F8F8F2">main()</span></span></code>
+
+When creating manual generations:
+
+<code><span class="line"><span style="--shiki-light:#F85E84;--shiki-dark:#F92672">from</span><span style="--shiki-light:#2D2A2E;--shiki-dark:#F8F8F2"> langfuse </span><span style="--shiki-light:#F85E84;--shiki-dark:#F92672">import</span><span style="--shiki-light:#2D2A2E;--shiki-dark:#F8F8F2"> get_client</span></span>
+<span class="line"><span style="--shiki-light:#F85E84;--shiki-dark:#F92672">import</span><span style="--shiki-light:#2D2A2E;--shiki-dark:#F8F8F2"> anthropic</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#2D2A2E;--shiki-dark:#F8F8F2">langfuse </span><span style="--shiki-light:#F85E84;--shiki-dark:#F92672">=</span><span style="--shiki-light:#2D2A2E;--shiki-dark:#F8F8F2"> get_client()</span></span>
+<span class="line"><span style="--shiki-light:#2D2A2E;--shiki-dark:#F8F8F2">anthropic_client </span><span style="--shiki-light:#F85E84;--shiki-dark:#F92672">=</span><span style="--shiki-light:#2D2A2E;--shiki-dark:#F8F8F2"> anthropic.Anthropic()</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#F85E84;--shiki-dark:#F92672">with</span><span style="--shiki-light:#2D2A2E;--shiki-dark:#F8F8F2"> langfuse.start_as_current_observation(</span></span>
+<span class="line"><span style="--shiki-light:#2D2A2E;--shiki-light-font-style:inherit;--shiki-dark:#FD971F;--shiki-dark-font-style:italic"> as_type</span><span style="--shiki-light:#F85E84;--shiki-dark:#F92672">=</span><span style="--shiki-light:#B58900;--shiki-dark:#E6DB74">"generation"</span><span style="--shiki-light:#2D2A2E;--shiki-dark:#F8F8F2">,</span></span>
+<span class="line"><span style="--shiki-light:#2D2A2E;--shiki-light-font-style:inherit;--shiki-dark:#FD971F;--shiki-dark-font-style:italic"> name</span><span style="--shiki-light:#F85E84;--shiki-dark:#F92672">=</span><span style="--shiki-light:#B58900;--shiki-dark:#E6DB74">"anthropic-completion"</span><span style="--shiki-light:#2D2A2E;--shiki-dark:#F8F8F2">,</span></span>
+<span class="line"><span style="--shiki-light:#2D2A2E;--shiki-light-font-style:inherit;--shiki-dark:#FD971F;--shiki-dark-font-style:italic"> model</span><span style="--shiki-light:#F85E84;--shiki-dark:#F92672">=</span><span style="--shiki-light:#B58900;--shiki-dark:#E6DB74">"claude-3-opus-20240229"</span><span style="--shiki-light:#2D2A2E;--shiki-dark:#F8F8F2">,</span></span>
+<span class="line"><span style="--shiki-light:#2D2A2E;--shiki-light-font-style:inherit;--shiki-dark:#FD971F;--shiki-dark-font-style:italic"> input</span><span style="--shiki-light:#F85E84;--shiki-dark:#F92672">=</span><span style="--shiki-light:#2D2A2E;--shiki-dark:#F8F8F2">[{</span><span style="--shiki-light:#B58900;--shiki-dark:#E6DB74">"role"</span><span style="--shiki-light:#2D2A2E;--shiki-dark:#F8F8F2">: </span><span style="--shiki-light:#B58900;--shiki-dark:#E6DB74">"user"</span><span style="--shiki-light:#2D2A2E;--shiki-dark:#F8F8F2">, </span><span style="--shiki-light:#B58900;--shiki-dark:#E6DB74">"content"</span><span style="--shiki-light:#2D2A2E;--shiki-dark:#F8F8F2">: </span><span style="--shiki-light:#B58900;--shiki-dark:#E6DB74">"Hello, Claude"</span><span style="--shiki-light:#2D2A2E;--shiki-dark:#F8F8F2">}]</span></span>
+<span class="line"><span style="--shiki-light:#2D2A2E;--shiki-dark:#F8F8F2">) </span><span style="--shiki-light:#F85E84;--shiki-dark:#F92672">as</span><span style="--shiki-light:#2D2A2E;--shiki-dark:#F8F8F2"> generation:</span></span>
+<span class="line"><span style="--shiki-light:#2D2A2E;--shiki-dark:#F8F8F2"> response </span><span style="--shiki-light:#F85E84;--shiki-dark:#F92672">=</span><span style="--shiki-light:#2D2A2E;--shiki-dark:#F8F8F2"> anthropic_client.messages.create(</span></span>
+<span class="line"><span style="--shiki-light:#2D2A2E;--shiki-light-font-style:inherit;--shiki-dark:#FD971F;--shiki-dark-font-style:italic"> model</span><span style="--shiki-light:#F85E84;--shiki-dark:#F92672">=</span><span style="--shiki-light:#B58900;--shiki-dark:#E6DB74">"claude-3-opus-20240229"</span><span style="--shiki-light:#2D2A2E;--shiki-dark:#F8F8F2">,</span></span>
+<span class="line"><span style="--shiki-light:#2D2A2E;--shiki-light-font-style:inherit;--shiki-dark:#FD971F;--shiki-dark-font-style:italic"> max_tokens</span><span style="--shiki-light:#F85E84;--shiki-dark:#F92672">=</span><span style="--shiki-light:#9A7EE6;--shiki-dark:#AE81FF">1024</span><span style="--shiki-light:#2D2A2E;--shiki-dark:#F8F8F2">,</span></span>
+<span class="line"><span style="--shiki-light:#2D2A2E;--shiki-light-font-style:inherit;--shiki-dark:#FD971F;--shiki-dark-font-style:italic"> messages</span><span style="--shiki-light:#F85E84;--shiki-dark:#F92672">=</span><span style="--shiki-light:#2D2A2E;--shiki-dark:#F8F8F2">[{</span><span style="--shiki-light:#B58900;--shiki-dark:#E6DB74">"role"</span><span style="--shiki-light:#2D2A2E;--shiki-dark:#F8F8F2">: </span><span style="--shiki-light:#B58900;--shiki-dark:#E6DB74">"user"</span><span style="--shiki-light:#2D2A2E;--shiki-dark:#F8F8F2">, </span><span style="--shiki-light:#B58900;--shiki-dark:#E6DB74">"content"</span><span style="--shiki-light:#2D2A2E;--shiki-dark:#F8F8F2">: </span><span style="--shiki-light:#B58900;--shiki-dark:#E6DB74">"Hello, Claude"</span><span style="--shiki-light:#2D2A2E;--shiki-dark:#F8F8F2">}]</span></span>
+<span class="line"><span style="--shiki-light:#2D2A2E;--shiki-dark:#F8F8F2"> )</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#2D2A2E;--shiki-dark:#F8F8F2"> generation.update(</span></span>
+<span class="line"><span style="--shiki-light:#2D2A2E;--shiki-light-font-style:inherit;--shiki-dark:#FD971F;--shiki-dark-font-style:italic"> output</span><span style="--shiki-light:#F85E84;--shiki-dark:#F92672">=</span><span style="--shiki-light:#2D2A2E;--shiki-dark:#F8F8F2">response.content[</span><span style="--shiki-light:#9A7EE6;--shiki-dark:#AE81FF">0</span><span style="--shiki-light:#2D2A2E;--shiki-dark:#F8F8F2">].text,</span></span>
+<span class="line"><span style="--shiki-light:#2D2A2E;--shiki-light-font-style:inherit;--shiki-dark:#FD971F;--shiki-dark-font-style:italic"> usage_details</span><span style="--shiki-light:#F85E84;--shiki-dark:#F92672">=</span><span style="--shiki-light:#2D2A2E;--shiki-dark:#F8F8F2">{</span></span>
+<span class="line"><span style="--shiki-light:#B58900;--shiki-dark:#E6DB74"> "input"</span><span style="--shiki-light:#2D2A2E;--shiki-dark:#F8F8F2">: response.usage.input_tokens,</span></span>
+<span class="line"><span style="--shiki-light:#B58900;--shiki-dark:#E6DB74"> "output"</span><span style="--shiki-light:#2D2A2E;--shiki-dark:#F8F8F2">: response.usage.output_tokens,</span></span>
+<span class="line"><span style="--shiki-light:#B58900;--shiki-dark:#E6DB74"> "cache_read_input_tokens"</span><span style="--shiki-light:#2D2A2E;--shiki-dark:#F8F8F2">: response.usage.cache_read_input_tokens</span></span>
+<span class="line"><span style="--shiki-light:#9D9D9D;--shiki-light-font-style:italic;--shiki-dark:#88846F;--shiki-dark-font-style:inherit"> # "total": int, # if not set, it is derived from input + cache_read_input_tokens + output</span></span>
+<span class="line"><span style="--shiki-light:#2D2A2E;--shiki-dark:#F8F8F2"> },</span></span>
+<span class="line"><span style="--shiki-light:#9D9D9D;--shiki-light-font-style:italic;--shiki-dark:#88846F;--shiki-dark-font-style:inherit"> # Optionally, also ingest usd cost. Alternatively, you can infer it via a model definition in Langfuse.</span></span>
+<span class="line"><span style="--shiki-light:#2D2A2E;--shiki-light-font-style:inherit;--shiki-dark:#FD971F;--shiki-dark-font-style:italic"> cost_details</span><span style="--shiki-light:#F85E84;--shiki-dark:#F92672">=</span><span style="--shiki-light:#2D2A2E;--shiki-dark:#F8F8F2">{</span></span>
+<span class="line"><span style="--shiki-light:#9D9D9D;--shiki-light-font-style:italic;--shiki-dark:#88846F;--shiki-dark-font-style:inherit"> # Here we assume the input and output cost are 1 USD each and half the price for cached tokens.</span></span>
+<span class="line"><span style="--shiki-light:#B58900;--shiki-dark:#E6DB74"> "input"</span><span style="--shiki-light:#2D2A2E;--shiki-dark:#F8F8F2">: </span><span style="--shiki-light:#9A7EE6;--shiki-dark:#AE81FF">1</span><span style="--shiki-light:#2D2A2E;--shiki-dark:#F8F8F2">,</span></span>
+<span class="line"><span style="--shiki-light:#B58900;--shiki-dark:#E6DB74"> "cache_read_input_tokens"</span><span style="--shiki-light:#2D2A2E;--shiki-dark:#F8F8F2">: </span><span style="--shiki-light:#9A7EE6;--shiki-dark:#AE81FF">0.5</span><span style="--shiki-light:#2D2A2E;--shiki-dark:#F8F8F2">,</span></span>
+<span class="line"><span style="--shiki-light:#B58900;--shiki-dark:#E6DB74"> "output"</span><span style="--shiki-light:#2D2A2E;--shiki-dark:#F8F8F2">: </span><span style="--shiki-light:#9A7EE6;--shiki-dark:#AE81FF">1</span><span style="--shiki-light:#2D2A2E;--shiki-dark:#F8F8F2">,</span></span>
+<span class="line"><span style="--shiki-light:#9D9D9D;--shiki-light-font-style:italic;--shiki-dark:#88846F;--shiki-dark-font-style:inherit"> # "total": float, # if not set, it is derived from input + cache_read_input_tokens + output</span></span>
+<span class="line"><span style="--shiki-light:#2D2A2E;--shiki-dark:#F8F8F2"> }</span></span>
+<span class="line"><span style="--shiki-light:#2D2A2E;--shiki-dark:#F8F8F2"> )</span></span></code>
+
+When using the context manager:
+
+<code><span class="line"><span style="--shiki-light:#F85E84;--shiki-dark:#F92672">import</span><span style="--shiki-light:#2D2A2E;--shiki-dark:#F8F8F2"> {</span></span>
+<span class="line"><span style="--shiki-light:#2D2A2E;--shiki-dark:#F8F8F2"> startActiveObservation,</span></span>
+<span class="line"><span style="--shiki-light:#2D2A2E;--shiki-dark:#F8F8F2"> startObservation,</span></span>
+<span class="line"><span style="--shiki-light:#2D2A2E;--shiki-dark:#F8F8F2"> updateActiveObservation,</span></span>
+<span class="line"><span style="--shiki-light:#2D2A2E;--shiki-dark:#F8F8F2">} </span><span style="--shiki-light:#F85E84;--shiki-dark:#F92672">from</span><span style="--shiki-light:#B58900;--shiki-dark:#E6DB74"> "@langfuse/tracing"</span><span style="--shiki-light:#2D2A2E;--shiki-dark:#F8F8F2">;</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#F85E84;--shiki-dark:#F92672">await</span><span style="--shiki-light:#78A855;--shiki-dark:#A6E22E"> startActiveObservation</span><span style="--shiki-light:#2D2A2E;--shiki-dark:#F8F8F2">(</span><span style="--shiki-light:#B58900;--shiki-dark:#E6DB74">"context-manager"</span><span style="--shiki-light:#2D2A2E;--shiki-dark:#F8F8F2">, </span><span style="--shiki-light:#F85E84;--shiki-dark:#F92672">async</span><span style="--shiki-light:#2D2A2E;--shiki-dark:#F8F8F2"> (</span><span style="--shiki-light:#2D2A2E;--shiki-light-font-style:inherit;--shiki-dark:#FD971F;--shiki-dark-font-style:italic">span</span><span style="--shiki-light:#2D2A2E;--shiki-dark:#F8F8F2">) </span><span style="--shiki-light:#F85E84;--shiki-light-font-style:inherit;--shiki-dark:#66D9EF;--shiki-dark-font-style:italic">=></span><span style="--shiki-light:#2D2A2E;--shiki-dark:#F8F8F2"> {</span></span>
+<span class="line"><span style="--shiki-light:#2D2A2E;--shiki-dark:#F8F8F2"> span.</span><span style="--shiki-light:#78A855;--shiki-dark:#A6E22E">update</span><span style="--shiki-light:#2D2A2E;--shiki-dark:#F8F8F2">({</span></span>
+<span class="line"><span style="--shiki-light:#2DB0BF;--shiki-dark:#F8F8F2"> input</span><span style="--shiki-light:#2D2A2E;--shiki-dark:#F8F8F2">:</span><span style="--shiki-light:#2D2A2E;--shiki-dark:#F8F8F2"> {</span><span style="--shiki-light:#2DB0BF;--shiki-dark:#F8F8F2"> query</span><span style="--shiki-light:#2D2A2E;--shiki-dark:#F8F8F2">:</span><span style="--shiki-light:#B58900;--shiki-dark:#E6DB74"> "What is the capital of France?"</span><span style="--shiki-light:#2D2A2E;--shiki-dark:#F8F8F2"> },</span></span>
+<span class="line"><span style="--shiki-light:#2D2A2E;--shiki-dark:#F8F8F2"> });</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#9D9D9D;--shiki-light-font-style:italic;--shiki-dark:#88846F;--shiki-dark-font-style:inherit"> // This generation will automatically be a child of "user-request"</span></span>
+<span class="line"><span style="--shiki-light:#F85E84;--shiki-light-font-style:inherit;--shiki-dark:#66D9EF;--shiki-dark-font-style:italic"> const</span><span style="--shiki-light:#FC9867;--shiki-dark:#F8F8F2"> generation</span><span style="--shiki-light:#F85E84;--shiki-dark:#F92672"> =</span><span style="--shiki-light:#78A855;--shiki-dark:#A6E22E"> startObservation</span><span style="--shiki-light:#2D2A2E;--shiki-dark:#F8F8F2">(</span></span>
+<span class="line"><span style="--shiki-light:#B58900;--shiki-dark:#E6DB74"> "llm-call"</span><span style="--shiki-light:#2D2A2E;--shiki-dark:#F8F8F2">,</span></span>
+<span class="line"><span style="--shiki-light:#2D2A2E;--shiki-dark:#F8F8F2"> {</span></span>
+<span class="line"><span style="--shiki-light:#2DB0BF;--shiki-dark:#F8F8F2"> model</span><span style="--shiki-light:#2D2A2E;--shiki-dark:#F8F8F2">:</span><span style="--shiki-light:#B58900;--shiki-dark:#E6DB74"> "gpt-4"</span><span style="--shiki-light:#2D2A2E;--shiki-dark:#F8F8F2">,</span></span>
+<span class="line"><span style="--shiki-light:#2DB0BF;--shiki-dark:#F8F8F2"> input</span><span style="--shiki-light:#2D2A2E;--shiki-dark:#F8F8F2">:</span><span style="--shiki-light:#2D2A2E;--shiki-dark:#F8F8F2"> [{</span><span style="--shiki-light:#2DB0BF;--shiki-dark:#F8F8F2"> role</span><span style="--shiki-light:#2D2A2E;--shiki-dark:#F8F8F2">:</span><span style="--shiki-light:#B58900;--shiki-dark:#E6DB74"> "user"</span><span style="--shiki-light:#2D2A2E;--shiki-dark:#F8F8F2">,</span><span style="--shiki-light:#2DB0BF;--shiki-dark:#F8F8F2"> content</span><span style="--shiki-light:#2D2A2E;--shiki-dark:#F8F8F2">:</span><span style="--shiki-light:#B58900;--shiki-dark:#E6DB74"> "What is the capital of France?"</span><span style="--shiki-light:#2D2A2E;--shiki-dark:#F8F8F2"> }],</span></span>
+<span class="line"><span style="--shiki-light:#2D2A2E;--shiki-dark:#F8F8F2"> },</span></span>
+<span class="line"><span style="--shiki-light:#2D2A2E;--shiki-dark:#F8F8F2"> { </span><span style="--shiki-light:#2DB0BF;--shiki-dark:#F8F8F2">asType</span><span style="--shiki-light:#2D2A2E;--shiki-dark:#F8F8F2">:</span><span style="--shiki-light:#B58900;--shiki-dark:#E6DB74"> "generation"</span><span style="--shiki-light:#2D2A2E;--shiki-dark:#F8F8F2"> }</span></span>
+<span class="line"><span style="--shiki-light:#2D2A2E;--shiki-dark:#F8F8F2"> );</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#9D9D9D;--shiki-light-font-style:italic;--shiki-dark:#88846F;--shiki-dark-font-style:inherit"> // ... LLM call logic ...</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#2D2A2E;--shiki-dark:#F8F8F2"> generation.</span><span style="--shiki-light:#78A855;--shiki-dark:#A6E22E">update</span><span style="--shiki-light:#2D2A2E;--shiki-dark:#F8F8F2">({</span></span>
+<span class="line"><span style="--shiki-light:#2DB0BF;--shiki-dark:#F8F8F2"> usageDetails</span><span style="--shiki-light:#2D2A2E;--shiki-dark:#F8F8F2">:</span><span style="--shiki-light:#2D2A2E;--shiki-dark:#F8F8F2"> {</span></span>
+<span class="line"><span style="--shiki-light:#2DB0BF;--shiki-dark:#F8F8F2"> input</span><span style="--shiki-light:#2D2A2E;--shiki-dark:#F8F8F2">:</span><span style="--shiki-light:#9A7EE6;--shiki-dark:#AE81FF"> 10</span><span style="--shiki-light:#2D2A2E;--shiki-dark:#F8F8F2">,</span></span>
+<span class="line"><span style="--shiki-light:#2DB0BF;--shiki-dark:#F8F8F2"> output</span><span style="--shiki-light:#2D2A2E;--shiki-dark:#F8F8F2">:</span><span style="--shiki-light:#9A7EE6;--shiki-dark:#AE81FF"> 5</span><span style="--shiki-light:#2D2A2E;--shiki-dark:#F8F8F2">,</span></span>
+<span class="line"><span style="--shiki-light:#2DB0BF;--shiki-dark:#F8F8F2"> cache_read_input_tokens</span><span style="--shiki-light:#2D2A2E;--shiki-dark:#F8F8F2">:</span><span style="--shiki-light:#9A7EE6;--shiki-dark:#AE81FF"> 2</span><span style="--shiki-light:#2D2A2E;--shiki-dark:#F8F8F2">,</span></span>
+<span class="line"><span style="--shiki-light:#2DB0BF;--shiki-dark:#F8F8F2"> some_other_token_count</span><span style="--shiki-light:#2D2A2E;--shiki-dark:#F8F8F2">:</span><span style="--shiki-light:#9A7EE6;--shiki-dark:#AE81FF"> 10</span><span style="--shiki-light:#2D2A2E;--shiki-dark:#F8F8F2">,</span></span>
+<span class="line"><span style="--shiki-light:#2DB0BF;--shiki-dark:#F8F8F2"> total</span><span style="--shiki-light:#2D2A2E;--shiki-dark:#F8F8F2">:</span><span style="--shiki-light:#9A7EE6;--shiki-dark:#AE81FF"> 17</span><span style="--shiki-light:#2D2A2E;--shiki-dark:#F8F8F2">,</span><span style="--shiki-light:#9D9D9D;--shiki-light-font-style:italic;--shiki-dark:#88846F;--shiki-dark-font-style:inherit"> // optional, it is derived from input + cache_read_input_tokens + output</span></span>
+<span class="line"><span style="--shiki-light:#2D2A2E;--shiki-dark:#F8F8F2"> },</span></span>
+<span class="line"><span style="--shiki-light:#2DB0BF;--shiki-dark:#F8F8F2"> costDetails</span><span style="--shiki-light:#2D2A2E;--shiki-dark:#F8F8F2">:</span><span style="--shiki-light:#2D2A2E;--shiki-dark:#F8F8F2"> {</span></span>
+<span class="line"><span style="--shiki-light:#9D9D9D;--shiki-light-font-style:italic;--shiki-dark:#88846F;--shiki-dark-font-style:inherit"> // If you don't want the costs to be calculated based on model definitions, you can pass the costDetails manually.</span></span>
+<span class="line"><span style="--shiki-light:#2DB0BF;--shiki-dark:#F8F8F2"> input</s
+
+[… truncated 41728 chars …]

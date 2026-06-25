@@ -46,6 +46,9 @@ PRICING: Dict[str, Dict[str, Tuple[float, float]]] = {
 FALLBACK_INPUT_PRICE = 1.00
 FALLBACK_OUTPUT_PRICE = 4.00
 
+# USD → CNY conversion rate (approximate, update as needed)
+USD_TO_CNY = 7.25
+
 
 def get_model_price(model: str, provider: str = "") -> Tuple[float, float]:
     """Look up (input_price_per_M, output_price_per_M) for a model.
@@ -74,11 +77,14 @@ def get_model_price(model: str, provider: str = "") -> Tuple[float, float]:
     return (FALLBACK_INPUT_PRICE, FALLBACK_OUTPUT_PRICE)
 
 
-def compute_cost(model: str, provider: str, input_tokens: int, output_tokens: int) -> float:
-    """Compute USD cost for a model call."""
+def compute_cost(model: str, provider: str, input_tokens: int, output_tokens: int,
+                 currency: str = "CNY") -> float:
+    """Compute cost for a model call. Defaults to CNY."""
     in_price, out_price = get_model_price(model, provider)
-    cost = (input_tokens / 1_000_000 * in_price) + (output_tokens / 1_000_000 * out_price)
-    return round(cost, 6)
+    usd = (input_tokens / 1_000_000 * in_price) + (output_tokens / 1_000_000 * out_price)
+    if currency.upper() == "CNY":
+        return round(usd * USD_TO_CNY, 4)
+    return round(usd, 6)
 
 
 def compute_costs(token_usage_list: list) -> dict:

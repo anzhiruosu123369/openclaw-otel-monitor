@@ -1,0 +1,204 @@
+Datasets - Langfuse
+https://langfuse.com/docs/evaluation/experiments/datasets
+
+<!DOCTYPE html>Datasets - Langfuse
+
+DocsDatasets
+
+Datasets
+
+DocsEvaluationExperimentsDatasets
+
+Copy page
+
+Datasets
+
+A dataset is a collection of inputs and expected outputs and is used to test your application. Both UI-based and SDK-based experiments support Langfuse Datasets.
+
+Langfuse Dataset View
+
+Why use datasets?
+
+Create test cases for your application with real production traces
+
+Collaboratively create and collect dataset items with your team
+
+Have a single source of truth for your test data
+
+Get Started
+
+Creating a dataset
+
+Datasets have a name which is unique within a project.
+
+Python SDKJS/TS SDKLangfuse UI
+
+<code><span class="line"><span style="--shiki-light:#2D2A2E;--shiki-dark:#F8F8F2">langfuse.create_dataset(</span></span>
+<span class="line"><span style="--shiki-light:#2D2A2E;--shiki-light-font-style:inherit;--shiki-dark:#FD971F;--shiki-dark-font-style:italic"> name</span><span style="--shiki-light:#F85E84;--shiki-dark:#F92672">=</span><span style="--shiki-light:#B58900;--shiki-dark:#E6DB74">"<dataset_name>"</span><span style="--shiki-light:#2D2A2E;--shiki-dark:#F8F8F2">,</span></span>
+<span class="line"><span style="--shiki-light:#9D9D9D;--shiki-light-font-style:italic;--shiki-dark:#88846F;--shiki-dark-font-style:inherit"> # optional description</span></span>
+<span class="line"><span style="--shiki-light:#2D2A2E;--shiki-light-font-style:inherit;--shiki-dark:#FD971F;--shiki-dark-font-style:italic"> description</span><span style="--shiki-light:#F85E84;--shiki-dark:#F92672">=</span><span style="--shiki-light:#B58900;--shiki-dark:#E6DB74">"My first dataset"</span><span style="--shiki-light:#2D2A2E;--shiki-dark:#F8F8F2">,</span></span>
+<span class="line"><span style="--shiki-light:#9D9D9D;--shiki-light-font-style:italic;--shiki-dark:#88846F;--shiki-dark-font-style:inherit"> # optional metadata</span></span>
+<span class="line"><span style="--shiki-light:#2D2A2E;--shiki-light-font-style:inherit;--shiki-dark:#FD971F;--shiki-dark-font-style:italic"> metadata</span><span style="--shiki-light:#F85E84;--shiki-dark:#F92672">=</span><span style="--shiki-light:#2D2A2E;--shiki-dark:#F8F8F2">{</span></span>
+<span class="line"><span style="--shiki-light:#B58900;--shiki-dark:#E6DB74"> "author"</span><span style="--shiki-light:#2D2A2E;--shiki-dark:#F8F8F2">: </span><span style="--shiki-light:#B58900;--shiki-dark:#E6DB74">"Alice"</span><span style="--shiki-light:#2D2A2E;--shiki-dark:#F8F8F2">,</span></span>
+<span class="line"><span style="--shiki-light:#B58900;--shiki-dark:#E6DB74"> "date"</span><span style="--shiki-light:#2D2A2E;--shiki-dark:#F8F8F2">: </span><span style="--shiki-light:#B58900;--shiki-dark:#E6DB74">"2022-01-01"</span><span style="--shiki-light:#2D2A2E;--shiki-dark:#F8F8F2">,</span></span>
+<span class="line"><span style="--shiki-light:#B58900;--shiki-dark:#E6DB74"> "type"</span><span style="--shiki-light:#2D2A2E;--shiki-dark:#F8F8F2">: </span><span style="--shiki-light:#B58900;--shiki-dark:#E6DB74">"benchmark"</span></span>
+<span class="line"><span style="--shiki-light:#2D2A2E;--shiki-dark:#F8F8F2"> }</span></span>
+<span class="line"><span style="--shiki-light:#2D2A2E;--shiki-dark:#F8F8F2">)</span></span></code>
+
+See Python SDK docs for details on how to initialize the Python client.
+
+<code><span class="line"><span style="--shiki-light:#F85E84;--shiki-dark:#F92672">import</span><span style="--shiki-light:#2D2A2E;--shiki-dark:#F8F8F2"> { LangfuseClient } </span><span style="--shiki-light:#F85E84;--shiki-dark:#F92672">from</span><span style="--shiki-light:#B58900;--shiki-dark:#E6DB74"> "@langfuse/client"</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#F85E84;--shiki-light-font-style:inherit;--shiki-dark:#66D9EF;--shiki-dark-font-style:italic">const</span><span style="--shiki-light:#FC9867;--shiki-dark:#F8F8F2"> langfuse</span><span style="--shiki-light:#F85E84;--shiki-dark:#F92672"> =</span><span style="--shiki-light:#F85E84;--shiki-dark:#F92672"> new</span><span style="--shiki-light:#78A855;--shiki-dark:#A6E22E"> LangfuseClient</span><span style="--shiki-light:#2D2A2E;--shiki-dark:#F8F8F2">()</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#F85E84;--shiki-dark:#F92672">await</span><span style="--shiki-light:#2D2A2E;--shiki-dark:#F8F8F2"> langfuse.api.datasets.</span><span style="--shiki-light:#78A855;--shiki-dark:#A6E22E">create</span><span style="--shiki-light:#2D2A2E;--shiki-dark:#F8F8F2">({</span></span>
+<span class="line"><span style="--shiki-light:#2DB0BF;--shiki-dark:#F8F8F2"> name</span><span style="--shiki-light:#2D2A2E;--shiki-dark:#F8F8F2">:</span><span style="--shiki-light:#B58900;--shiki-dark:#E6DB74"> "<dataset_name>"</span><span style="--shiki-light:#2D2A2E;--shiki-dark:#F8F8F2">,</span></span>
+<span class="line"><span style="--shiki-light:#9D9D9D;--shiki-light-font-style:italic;--shiki-dark:#88846F;--shiki-dark-font-style:inherit"> // optional description</span></span>
+<span class="line"><span style="--shiki-light:#2DB0BF;--shiki-dark:#F8F8F2"> description</span><span style="--shiki-light:#2D2A2E;--shiki-dark:#F8F8F2">:</span><span style="--shiki-light:#B58900;--shiki-dark:#E6DB74"> "My first dataset"</span><span style="--shiki-light:#2D2A2E;--shiki-dark:#F8F8F2">,</span></span>
+<span class="line"><span style="--shiki-light:#9D9D9D;--shiki-light-font-style:italic;--shiki-dark:#88846F;--shiki-dark-font-style:inherit"> // optional metadata</span></span>
+<span class="line"><span style="--shiki-light:#2DB0BF;--shiki-dark:#F8F8F2"> metadata</span><span style="--shiki-light:#2D2A2E;--shiki-dark:#F8F8F2">:</span><span style="--shiki-light:#2D2A2E;--shiki-dark:#F8F8F2"> {</span></span>
+<span class="line"><span style="--shiki-light:#2DB0BF;--shiki-dark:#F8F8F2"> author</span><span style="--shiki-light:#2D2A2E;--shiki-dark:#F8F8F2">:</span><span style="--shiki-light:#B58900;--shiki-dark:#E6DB74"> "Alice"</span><span style="--shiki-light:#2D2A2E;--shiki-dark:#F8F8F2">,</span></span>
+<span class="line"><span style="--shiki-light:#2DB0BF;--shiki-dark:#F8F8F2"> date</span><span style="--shiki-light:#2D2A2E;--shiki-dark:#F8F8F2">:</span><span style="--shiki-light:#B58900;--shiki-dark:#E6DB74"> "2022-01-01"</span><span style="--shiki-light:#2D2A2E;--shiki-dark:#F8F8F2">,</span></span>
+<span class="line"><span style="--shiki-light:#2DB0BF;--shiki-dark:#F8F8F2"> type</span><span style="--shiki-light:#2D2A2E;--shiki-dark:#F8F8F2">:</span><span style="--shiki-light:#B58900;--shiki-dark:#E6DB74"> "benchmark"</span><span style="--shiki-light:#2D2A2E;--shiki-dark:#F8F8F2">,</span></span>
+<span class="line"><span style="--shiki-light:#2D2A2E;--shiki-dark:#F8F8F2"> },</span></span>
+<span class="line"><span style="--shiki-light:#2D2A2E;--shiki-dark:#F8F8F2">});</span></span></code>
+
+Navigate to Your Project > Datasets
+
+Click on + New dataset to create a new dataset.
+
+Upload or create new dataset items
+
+Dataset items can be added to a dataset by providing the input and optionally the expected output. If preferred, dataset items can be imported using the CSV uploader in the Langfuse UI.
+
+Python SDKJS/TS SDKLangfuse UI
+
+<code><span class="line"><span style="--shiki-light:#2D2A2E;--shiki-dark:#F8F8F2">langfuse.create_dataset_item(</span></span>
+<span class="line"><span style="--shiki-light:#2D2A2E;--shiki-light-font-style:inherit;--shiki-dark:#FD971F;--shiki-dark-font-style:italic"> dataset_name</span><span style="--shiki-light:#F85E84;--shiki-dark:#F92672">=</span><span style="--shiki-light:#B58900;--shiki-dark:#E6DB74">"<dataset_name>"</span><span style="--shiki-light:#2D2A2E;--shiki-dark:#F8F8F2">,</span></span>
+<span class="line"><span style="--shiki-light:#9D9D9D;--shiki-light-font-style:italic;--shiki-dark:#88846F;--shiki-dark-font-style:inherit"> # any python object or value, optional</span></span>
+<span class="line"><span style="--shiki-light:#2D2A2E;--shiki-light-font-style:inherit;--shiki-dark:#FD971F;--shiki-dark-font-style:italic"> input</span><span style="--shiki-light:#F85E84;--shiki-dark:#F92672">=</span><span style="--shiki-light:#2D2A2E;--shiki-dark:#F8F8F2">{</span></span>
+<span class="line"><span style="--shiki-light:#B58900;--shiki-dark:#E6DB74"> "text"</span><span style="--shiki-light:#2D2A2E;--shiki-dark:#F8F8F2">: </span><span style="--shiki-light:#B58900;--shiki-dark:#E6DB74">"hello world"</span></span>
+<span class="line"><span style="--shiki-light:#2D2A2E;--shiki-dark:#F8F8F2"> },</span></span>
+<span class="line"><span style="--shiki-light:#9D9D9D;--shiki-light-font-style:italic;--shiki-dark:#88846F;--shiki-dark-font-style:inherit"> # any python object or value, optional</span></span>
+<span class="line"><span style="--shiki-light:#2D2A2E;--shiki-light-font-style:inherit;--shiki-dark:#FD971F;--shiki-dark-font-style:italic"> expected_output</span><span style="--shiki-light:#F85E84;--shiki-dark:#F92672">=</span><span style="--shiki-light:#2D2A2E;--shiki-dark:#F8F8F2">{</span></span>
+<span class="line"><span style="--shiki-light:#B58900;--shiki-dark:#E6DB74"> "text"</span><span style="--shiki-light:#2D2A2E;--shiki-dark:#F8F8F2">: </span><span style="--shiki-light:#B58900;--shiki-dark:#E6DB74">"hello world"</span></span>
+<span class="line"><span style="--shiki-light:#2D2A2E;--shiki-dark:#F8F8F2"> },</span></span>
+<span class="line"><span style="--shiki-light:#9D9D9D;--shiki-light-font-style:italic;--shiki-dark:#88846F;--shiki-dark-font-style:inherit"> # metadata, optional</span></span>
+<span class="line"><span style="--shiki-light:#2D2A2E;--shiki-light-font-style:inherit;--shiki-dark:#FD971F;--shiki-dark-font-style:italic"> metadata</span><span style="--shiki-light:#F85E84;--shiki-dark:#F92672">=</span><span style="--shiki-light:#2D2A2E;--shiki-dark:#F8F8F2">{</span></span>
+<span class="line"><span style="--shiki-light:#B58900;--shiki-dark:#E6DB74"> "model"</span><span style="--shiki-light:#2D2A2E;--shiki-dark:#F8F8F2">: </span><span style="--shiki-light:#B58900;--shiki-dark:#E6DB74">"llama3"</span><span style="--shiki-light:#2D2A2E;--shiki-dark:#F8F8F2">,</span></span>
+<span class="line"><span style="--shiki-light:#2D2A2E;--shiki-dark:#F8F8F2"> }</span></span>
+<span class="line"><span style="--shiki-light:#2D2A2E;--shiki-dark:#F8F8F2">)</span></span></code>
+
+You can also add media to dataset item input, expected_output, or metadata:
+
+<code><span class="line"><span style="--shiki-light:#F85E84;--shiki-dark:#F92672">from</span><span style="--shiki-light:#2D2A2E;--shiki-dark:#F8F8F2"> langfuse.media </span><span style="--shiki-light:#F85E84;--shiki-dark:#F92672">import</span><span style="--shiki-light:#2D2A2E;--shiki-dark:#F8F8F2"> LangfuseMedia</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#2D2A2E;--shiki-dark:#F8F8F2">langfuse.create_dataset_item(</span></span>
+<span class="line"><span style="--shiki-light:#2D2A2E;--shiki-light-font-style:inherit;--shiki-dark:#FD971F;--shiki-dark-font-style:italic"> dataset_name</span><span style="--shiki-light:#F85E84;--shiki-dark:#F92672">=</span><span style="--shiki-light:#B58900;--shiki-dark:#E6DB74">"visual-qa"</span><span style="--shiki-light:#2D2A2E;--shiki-dark:#F8F8F2">,</span></span>
+<span class="line"><span style="--shiki-light:#2D2A2E;--shiki-light-font-style:inherit;--shiki-dark:#FD971F;--shiki-dark-font-style:italic"> input</span><span style="--shiki-light:#F85E84;--shiki-dark:#F92672">=</span><span style="--shiki-light:#2D2A2E;--shiki-dark:#F8F8F2">{</span></span>
+<span class="line"><span style="--shiki-light:#B58900;--shiki-dark:#E6DB74"> "question"</span><span style="--shiki-light:#2D2A2E;--shiki-dark:#F8F8F2">: </span><span style="--shiki-light:#B58900;--shiki-dark:#E6DB74">"What is shown in this image?"</span><span style="--shiki-light:#2D2A2E;--shiki-dark:#F8F8F2">,</span></span>
+<span class="line"><span style="--shiki-light:#B58900;--shiki-dark:#E6DB74"> "image"</span><span style="--shiki-light:#2D2A2E;--shiki-dark:#F8F8F2">: LangfuseMedia(</span></span>
+<span class="line"><span style="--shiki-light:#2D2A2E;--shiki-light-font-style:inherit;--shiki-dark:#FD971F;--shiki-dark-font-style:italic"> file_path</span><span style="--shiki-light:#F85E84;--shiki-dark:#F92672">=</span><span style="--shiki-light:#B58900;--shiki-dark:#E6DB74">"./example.jpg"</span><span style="--shiki-light:#2D2A2E;--shiki-dark:#F8F8F2">,</span></span>
+<span class="line"><span style="--shiki-light:#2D2A2E;--shiki-light-font-style:inherit;--shiki-dark:#FD971F;--shiki-dark-font-style:italic"> content_type</span><span style="--shiki-light:#F85E84;--shiki-dark:#F92672">=</span><span style="--shiki-light:#B58900;--shiki-dark:#E6DB74">"image/jpeg"</span><span style="--shiki-light:#2D2A2E;--shiki-dark:#F8F8F2">,</span></span>
+<span class="line"><span style="--shiki-light:#2D2A2E;--shiki-dark:#F8F8F2"> ),</span></span>
+<span class="line"><span style="--shiki-light:#2D2A2E;--shiki-dark:#F8F8F2"> },</span></span>
+<span class="line"><span style="--shiki-light:#2D2A2E;--shiki-light-font-style:inherit;--shiki-dark:#FD971F;--shiki-dark-font-style:italic"> expected_output</span><span style="--shiki-light:#F85E84;--shiki-dark:#F92672">=</span><span style="--shiki-light:#2D2A2E;--shiki-dark:#F8F8F2">{</span><span style="--shiki-light:#B58900;--shiki-dark:#E6DB74">"label"</span><span style="--shiki-light:#2D2A2E;--shiki-dark:#F8F8F2">: </span><span style="--shiki-light:#B58900;--shiki-dark:#E6DB74">"invoice"</span><span style="--shiki-light:#2D2A2E;--shiki-dark:#F8F8F2">},</span></span>
+<span class="line"><span style="--shiki-light:#2D2A2E;--shiki-dark:#F8F8F2">)</span></span></code>
+
+See Python SDK docs for details on how to initialize the Python client.
+
+<code><span class="line"><span style="--shiki-light:#F85E84;--shiki-dark:#F92672">import</span><span style="--shiki-light:#2D2A2E;--shiki-dark:#F8F8F2"> { LangfuseClient } </span><span style="--shiki-light:#F85E84;--shiki-dark:#F92672">from</span><span style="--shiki-light:#B58900;--shiki-dark:#E6DB74"> "@langfuse/client"</span><span style="--shiki-light:#2D2A2E;--shiki-dark:#F8F8F2">;</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#F85E84;--shiki-light-font-style:inherit;--shiki-dark:#66D9EF;--shiki-dark-font-style:italic">const</span><span style="--shiki-light:#FC9867;--shiki-dark:#F8F8F2"> langfuse</span><span style="--shiki-light:#F85E84;--shiki-dark:#F92672"> =</span><span style="--shiki-light:#F85E84;--shiki-dark:#F92672"> new</span><span style="--shiki-light:#78A855;--shiki-dark:#A6E22E"> LangfuseClient</span><span style="--shiki-light:#2D2A2E;--shiki-dark:#F8F8F2">();</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#F85E84;--shiki-dark:#F92672">await</span><span style="--shiki-light:#2D2A2E;--shiki-dark:#F8F8F2"> langfuse.dataset.</span><span style="--shiki-light:#78A855;--shiki-dark:#A6E22E">createItem</span><span style="--shiki-light:#2D2A2E;--shiki-dark:#F8F8F2">({</span></span>
+<span class="line"><span style="--shiki-light:#2DB0BF;--shiki-dark:#F8F8F2"> datasetName</span><span style="--shiki-light:#2D2A2E;--shiki-dark:#F8F8F2">:</span><span style="--shiki-light:#B58900;--shiki-dark:#E6DB74"> "<dataset_name>"</span><span style="--shiki-light:#2D2A2E;--shiki-dark:#F8F8F2">,</span></span>
+<span class="line"><span style="--shiki-light:#9D9D9D;--shiki-light-font-style:italic;--shiki-dark:#88846F;--shiki-dark-font-style:inherit"> // any JS object or value</span></span>
+<span class="line"><span style="--shiki-light:#2DB0BF;--shiki-dark:#F8F8F2"> input</span><span style="--shiki-light:#2D2A2E;--shiki-dark:#F8F8F2">:</span><span style="--shiki-light:#2D2A2E;--shiki-dark:#F8F8F2"> {</span></span>
+<span class="line"><span style="--shiki-light:#2DB0BF;--shiki-dark:#F8F8F2"> text</span><span style="--shiki-light:#2D2A2E;--shiki-dark:#F8F8F2">:</span><span style="--shiki-light:#B58900;--shiki-dark:#E6DB74"> "hello world"</span><span style="--shiki-light:#2D2A2E;--shiki-dark:#F8F8F2">,</span></span>
+<span class="line"><span style="--shiki-light:#2D2A2E;--shiki-dark:#F8F8F2"> },</span></span>
+<span class="line"><span style="--shiki-light:#9D9D9D;--shiki-light-font-style:italic;--shiki-dark:#88846F;--shiki-dark-font-style:inherit"> // any JS object or value, optional</span></span>
+<span class="line"><span style="--shiki-light:#2DB0BF;--shiki-dark:#F8F8F2"> expectedOutput</span><span style="--shiki-light:#2D2A2E;--shiki-dark:#F8F8F2">:</span><span style="--shiki-light:#2D2A2E;--shiki-dark:#F8F8F2"> {</span></span>
+<span class="line"><span style="--shiki-light:#2DB0BF;--shiki-dark:#F8F8F2"> text</span><span style="--shiki-light:#2D2A2E;--shiki-dark:#F8F8F2">:</span><span style="--shiki-light:#B58900;--shiki-dark:#E6DB74"> "hello world"</span><span style="--shiki-light:#2D2A2E;--shiki-dark:#F8F8F2">,</span></span>
+<span class="line"><span style="--shiki-light:#2D2A2E;--shiki-dark:#F8F8F2"> },</span></span>
+<span class="line"><span style="--shiki-light:#9D9D9D;--shiki-light-font-style:italic;--shiki-dark:#88846F;--shiki-dark-font-style:inherit"> // metadata, optional</span></span>
+<span class="line"><span style="--shiki-light:#2DB0BF;--shiki-dark:#F8F8F2"> metadata</span><span style="--shiki-light:#2D2A2E;--shiki-dark:#F8F8F2">:</span><span style="--shiki-light:#2D2A2E;--shiki-dark:#F8F8F2"> {</span></span>
+<span class="line"><span style="--shiki-light:#2DB0BF;--shiki-dark:#F8F8F2"> model</span><span style="--shiki-light:#2D2A2E;--shiki-dark:#F8F8F2">:</span><span style="--shiki-light:#B58900;--shiki-dark:#E6DB74"> "llama3"</span><span style="--shiki-light:#2D2A2E;--shiki-dark:#F8F8F2">,</span></span>
+<span class="line"><span style="--shiki-light:#2D2A2E;--shiki-dark:#F8F8F2"> },</span></span>
+<span class="line"><span style="--shiki-light:#2D2A2E;--shiki-dark:#F8F8F2">});</span></span></code>
+
+You can also add media to dataset item input, expectedOutput, or metadata:
+
+<code><span class="line"><span style="--shiki-light:#F85E84;--shiki-dark:#F92672">import</span><span style="--shiki-light:#2D2A2E;--shiki-dark:#F8F8F2"> { LangfuseClient, LangfuseMedia } </span><span style="--shiki-light:#F85E84;--shiki-dark:#F92672">from</span><span style="--shiki-light:#B58900;--shiki-dark:#E6DB74"> "@langfuse/client"</span><span style="--shiki-light:#2D2A2E;--shiki-dark:#F8F8F2">;</span></span>
+<span class="line"><span style="--shiki-light:#F85E84;--shiki-dark:#F92672">import</span><span style="--shiki-light:#2D2A2E;--shiki-dark:#F8F8F2"> fs </span><span style="--shiki-light:#F85E84;--shiki-dark:#F92672">from</span><span style="--shiki-light:#B58900;--shiki-dark:#E6DB74"> "node:fs"</span><span style="--shiki-light:#2D2A2E;--shiki-dark:#F8F8F2">;</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#F85E84;--shiki-light-font-style:inherit;--shiki-dark:#66D9EF;--shiki-dark-font-style:italic">const</span><span style="--shiki-light:#FC9867;--shiki-dark:#F8F8F2"> langfuse</span><span style="--shiki-light:#F85E84;--shiki-dark:#F92672"> =</span><span style="--shiki-light:#F85E84;--shiki-dark:#F92672"> new</span><span style="--shiki-light:#78A855;--shiki-dark:#A6E22E"> LangfuseClient</span><span style="--shiki-light:#2D2A2E;--shiki-dark:#F8F8F2">();</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#F85E84;--shiki-dark:#F92672">await</span><span style="--shiki-light:#2D2A2E;--shiki-dark:#F8F8F2"> langfuse.dataset.</span><span style="--shiki-light:#78A855;--shiki-dark:#A6E22E">createItem</span><span style="--shiki-light:#2D2A2E;--shiki-dark:#F8F8F2">({</span></span>
+<span class="line"><span style="--shiki-light:#2DB0BF;--shiki-dark:#F8F8F2"> datasetName</span><span style="--shiki-light:#2D2A2E;--shiki-dark:#F8F8F2">:</span><span style="--shiki-light:#B58900;--shiki-dark:#E6DB74"> "visual-qa"</span><span style="--shiki-light:#2D2A2E;--shiki-dark:#F8F8F2">,</span></span>
+<span class="line"><span style="--shiki-light:#2DB0BF;--shiki-dark:#F8F8F2"> input</span><span style="--shiki-light:#2D2A2E;--shiki-dark:#F8F8F2">:</span><span style="--shiki-light:#2D2A2E;--shiki-dark:#F8F8F2"> {</span></span>
+<span class="line"><span style="--shiki-light:#2DB0BF;--shiki-dark:#F8F8F2"> question</span><span style="--shiki-light:#2D2A2E;--shiki-dark:#F8F8F2">:</span><span style="--shiki-light:#B58900;--shiki-dark:#E6DB74"> "What is shown in this image?"</span><span style="--shiki-light:#2D2A2E;--shiki-dark:#F8F8F2">,</span></span>
+<span class="line"><span style="--shiki-light:#2DB0BF;--shiki-dark:#F8F8F2"> image</span><span style="--shiki-light:#2D2A2E;--shiki-dark:#F8F8F2">:</span><span style="--shiki-light:#F85E84;--shiki-dark:#F92672"> new</span><span style="--shiki-light:#78A855;--shiki-dark:#A6E22E"> LangfuseMedia</span><span style="--shiki-light:#2D2A2E;--shiki-dark:#F8F8F2">({</span></span>
+<span class="line"><span style="--shiki-light:#2DB0BF;--shiki-dark:#F8F8F2"> source</span><span style="--shiki-light:#2D2A2E;--shiki-dark:#F8F8F2">:</span><span style="--shiki-light:#B58900;--shiki-dark:#E6DB74"> "bytes"</span><span style="--shiki-light:#2D2A2E;--shiki-dark:#F8F8F2">,</span></span>
+<span class="line"><span style="--shiki-light:#2DB0BF;--shiki-dark:#F8F8F2"> contentBytes</span><span style="--shiki-light:#2D2A2E;--shiki-dark:#F8F8F2">:</span><span style="--shiki-light:#2D2A2E;--shiki-dark:#F8F8F2"> fs.</span><span style="--shiki-light:#78A855;--shiki-dark:#A6E22E">readFileSync</span><span style="--shiki-light:#2D2A2E;--shiki-dark:#F8F8F2">(</span><span style="--shiki-light:#B58900;--shiki-dark:#E6DB74">"./example.jpg"</span><span style="--shiki-light:#2D2A2E;--shiki-dark:#F8F8F2">),</span></span>
+<span class="line"><span style="--shiki-light:#2DB0BF;--shiki-dark:#F8F8F2"> contentType</span><span style="--shiki-light:#2D2A2E;--shiki-dark:#F8F8F2">:</span><span style="--shiki-light:#B58900;--shiki-dark:#E6DB74"> "image/jpeg"</span><span style="--shiki-light:#2D2A2E;--shiki-dark:#F8F8F2">,</span></span>
+<span class="line"><span style="--shiki-light:#2D2A2E;--shiki-dark:#F8F8F2"> }),</span></span>
+<span class="line"><span style="--shiki-light:#2D2A2E;--shiki-dark:#F8F8F2"> },</span></span>
+<span class="line"><span style="--shiki-light:#2DB0BF;--shiki-dark:#F8F8F2"> expectedOutput</span><span style="--shiki-light:#2D2A2E;--shiki-dark:#F8F8F2">:</span><span style="--shiki-light:#2D2A2E;--shiki-dark:#F8F8F2"> {</span><span style="--shiki-light:#2DB0BF;--shiki-dark:#F8F8F2"> label</span><span style="--shiki-light:#2D2A2E;--shiki-dark:#F8F8F2">:</span><span style="--shiki-light:#B58900;--shiki-dark:#E6DB74"> "invoice"</span><span style="--shiki-light:#2D2A2E;--shiki-dark:#F8F8F2"> },</span></span>
+<span class="line"><span style="--shiki-light:#2D2A2E;--shiki-dark:#F8F8F2">});</span></span></code>
+
+See JS/TS SDK docs for details on how to initialize the JS/TS client.
+
+Add itemImport CSVAdd from traceAdd batch from observations table
+
+Dataset uploads are meant to upload the input and expected output. If you already have generated outputs, please use the Experiments SDK.
+
+Select multiple observations from the Observations table, then click Actions → Add to dataset. You can create a new dataset or add to an existing one, with flexible field mapping options to control how observation data maps to dataset items. See Batch add observations to datasets for details.
+
+Multi-modal dataset items
+
+Dataset item input, expectedOutput, and metadata fields can include media attachments such as images, audio, video, documents, and other files. You can add media from the Langfuse UI when creating or editing an item, or upload media through the Python and JS/TS SDKs with LangfuseMedia.
+
+Multi-modal datasets are supported for SDK-based experiments with Python SDK
+>= 4.10.0 and JS/TS SDK @langfuse/client >= 5.6.0. UI-based
+experiments do not yet support dataset items with media attachments.
+
+In the UI, open a dataset item and use the attach button, drag-and-drop, or paste files into the input, expectedOutput, or metadata editor.
+
+In the SDKs, wrap media in LangfuseMedia before creating the dataset item. The SDK uploads the media, stores a reference in the dataset item, and the Langfuse UI renders the attachment preview.
+
+Python SDKJS/TS SDK
+
+<code><span class="line"><span style="--shiki-light:#F85E84;--shiki-dark:#F92672">from</span><span style="--shiki-light:#2D2A2E;--shiki-dark:#F8F8F2"> langfuse </span><span style="--shiki-light:#F85E84;--shiki-dark:#F92672">import</span><span style="--shiki-light:#2D2A2E;--shiki-dark:#F8F8F2"> get_client</span></span>
+<span class="line"><span style="--shiki-light:#F85E84;--shiki-dark:#F92672">from</span><span style="--shiki-light:#2D2A2E;--shiki-dark:#F8F8F2"> langfuse.media </span><span style="--shiki-light:#F85E84;--shiki-dark:#F92672">import</span><span style="--shiki-light:#2D2A2E;--shiki-dark:#F8F8F2"> LangfuseMedia</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#2D2A2E;--shiki-dark:#F8F8F2">langfuse </span><span style="--shiki-light:#F85E84;--shiki-dark:#F92672">=</span><span style="--shiki-light:#2D2A2E;--shiki-dark:#F8F8F2"> get_client()</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#2D2A2E;--shiki-dark:#F8F8F2">langfuse.create_dataset_item(</span></span>
+<span class="line"><span style="--shiki-light:#2D2A2E;--shiki-light-font-style:inherit;--shiki-dark:#FD971F;--shiki-dark-font-style:italic"> dataset_name</span><span style="--shiki-light:#F85E84;--shiki-dark:#F92672">=</span><span style="--shiki-light:#B58900;--shiki-dark:#E6DB74">"visual-qa"</span><span style="--shiki-light:#2D2A2E;--shiki-dark:#F8F8F2">,</span></span>
+<span class="line"><span style="--shiki-light:#2D2A2E;--shiki-light-font-style:inherit;--shiki-dark:#FD971F;--shiki-dark-font-style:italic"> input</span><span style="--shiki-light:#F85E84;--shiki-dark:#F92672">=</span><span style="--shiki-light:#2D2A2E;--shiki-dark:#F8F8F2">{</span></span>
+<span class="line"><span style="--shiki-light:#B58900;--shiki-dark:#E6DB74"> "question"</span><span style="--shiki-light:#2D2A2E;--shiki-dark:#F8F8F2">: </span><span style="--shiki-light:#B58900;--shiki-dark:#E6DB74">"What is shown in this image?"</span><span style="--shiki-light:#2D2A2E;--shiki-dark:#F8F8F2">,</span></span>
+<span class="line"><span style="--shiki-light:#B58900;--shiki-dark:#E6DB74"> "image"</span><span style="--shiki-light:#2D2A2E;--shiki-dark:#F8F8F2">: LangfuseMedia(</span></span>
+<span class="line"><span style="--shiki-light:#2D2A2E;--shiki-light-font-style:inherit;--shiki-dark:#FD971F;--shiki-dark-font-style:italic"> file_path</span><span style="--shiki-light:#F85E84;--shiki-dark:#F92672">=</span><span style="--shiki-light:#B58900;--shiki-dark:#E6DB74">"./example.jpg"</span><span style="--shiki-light:#2D2A2E;--shiki-dark:#F8F8F2">,</span></span>
+<span class="line"><span style="--shiki-light:#2D2A2E;--shiki-light-font-style:inherit;--shiki-dark:#FD971F;--shiki-dark-font-style:italic"> content_type</span><span style="--shiki-light:#F85E84;--shiki-dark:#F92672">=</span><span style="--shiki-light:#B58900;--shiki-dark:#E6DB74">"image/jpeg"</span><span style="--shiki-light:#2D2A2E;--shiki-dark:#F8F8F2">,</span></span>
+<span class="line"><span style="--shiki-light:#2D2A2E;--shiki-dark:#F8F8F2"> ),</span></span>
+<span class="line"><span style="--shiki-light:#2D2A2E;--shiki-dark:#F8F8F2"> },</span></span>
+<span class="line"><span style="--shiki-light:#2D2A2E;--shiki-light-font-style:inherit;--shiki-dark:#FD971F;--shiki-dark-font-style:italic"> expected_output</span><span style="--shiki-light:#F85E84;--shiki-dark:#F92672">=</span><span style="--shiki-light:#2D2A2E;--shiki-dark:#F8F8F2">{</span><span style="--shiki-light:#B58900;--shiki-dark:#E6DB74">"label"</span><span style="--shiki-light:#2D2A2E;--shiki-dark:#F8F8F2">: </span><span style="--shiki-light:#B58900;--shiki-dark:#E6DB74">"invoice"</span><span style="--shiki-light:#2D2A2E;--shiki-dark:#F8F8F2">},</span></span>
+<span class="line"><span style="--shiki-light:#2D2A2E;--shiki-dark:#F8F8F2">)</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#2D2A2E;--shiki-dark:#F8F8F2">dataset </span><span style="--shiki-light:#F85E84;--shiki-dark:#F92672">=</span><span style="--shiki-light:#2D2A2E;--shiki-dark:#F8F8F2"> langfuse.get_dataset(</span><span style="--shiki-light:#B58900;--shiki-dark:#E6DB74">"visual-qa"</span><span style="--shiki-light:#2D2A2E;--shiki-dark:#F8F8F2">)</span></span></code>
+
+<code><span class="line"><span style="--shiki-light:#F85E84;--shiki-dark:#F92672">import</span><span style="--shiki-light:#2D2A2E;--shiki-dark:#F8F8F2"> { LangfuseClient, LangfuseMedia } </span><span style="--shiki-light:#F85E84;--shiki-dark:#F92672">from</span><span style="--shiki-light:#B58900;--shiki-dark:#E6DB74"> "@langfuse/client"</span><span style="--shiki-light:#2D2A2E;--shiki-dark:#F8F8F2">;</span></span>
+<span class="line"><span style="--shiki-light:#F85E84;--shiki-dark:#F92672">import</span><span style="--shiki-light:#2D2A2E;--shiki-dark:#F8F8F2"> fs </span><span style="--shiki-light:#F85E84;--shiki-dark:#F92672">from</span><span style="--shiki-light:#B58900;--shiki-dark:#E6DB74"> "node:fs"</span><span style="--shiki-light:#2D2A2E;--shiki-dark:#F8F8F2">;</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#F85E84;--shiki-light-font-style:inherit;--shiki-dark:#66D9EF;--shiki-dark-font-style:italic">const</span><span style="--shiki-light:#FC9867;--shiki-dark:#F8F8F2"> langfuse</span><span style="--shiki-light:#F85E84;--shiki-dark:#F92672"> =</span><span style="--shiki-light:#F85E84;--shiki-dark:#F92672"> new</span><span style="--shiki-light:#78A855;--shiki-dark:#A6E22E"> LangfuseClient</span><span style="--shiki-light:#2D2A2E;--shiki-dark:#F8F8F2">();</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#F85E84;--shiki-dark:#F92672">await</span><span style="--shiki-light:#2D2A2E;--shiki-dark:#F8F8F2"> langfuse.dataset.</span><span style="--shiki-light:#78A855;--shiki-dark:#A6E22E">createItem</span><span style="--shiki-light:#2D2A2E;--shiki-dark:#F8F8F2">({</span></span>
+<span class="line"><span style="--shiki-light:#2DB0BF;--shiki-dark:#F8F8F2"> datasetName</span><span style="--shiki-light:#2D2A2E;--shiki-dark:#F8F8F2">:</span><span style="--shiki-light:#B58900;--shiki-dark:#E6DB74"> "visual-qa"</span><span style="--shiki-light:#2D2A2E;--shiki-dark:#F8F8F2">,</span></span>
+<span class="line"><span style="--shiki-light:#2DB0BF;--shiki-dark:#F8F8F2"> input</span><span style="--shiki-light:#2D2A2E;--shiki-dark:#F8F8F2">:</span><span style="--shiki-light:#2D2A2E;--shiki-dark:#F8F8F2"> {</span></span>
+<span class="line"><span style="--shiki-light:#2DB0BF;--shiki-dark:#F8F8F2"> question</span><span style="--shiki-light:#2D2A2E;--shiki-dark:#F8F8F2">:</span><span style="--shiki-light:#B58900;--shiki-dark:#E6DB74"> "What is shown in this image?"</span><span style="--shiki-light:#2D2A2E;--shiki-dark:#F8F8F2">,</span></span>
+<span class="line"><span style="--shiki-light:#2DB0BF;--shiki-dark:#F8F8F2"> image</span><span style="--shiki-light:#2D2A2E;--shiki-dark:#F8F8F2">:</span><span style="--shiki-light:#F85E84;--shiki-dark:#F92672"> new</span><span style="--shiki-light:#78A855;--shiki-dark:#A6E22E"> LangfuseMedia</span><span style="--shiki-light:#2D2A2E;--shiki-dark:#F8F8F2">({</span></span>
+<span class="line"><span style="--shiki-light:#2DB0BF;--shiki-dark:#F8F8F2"> source</span><span style="--shiki-light:#2D2A2E;--shiki-dark:#F8F8F2">:</span><span style="--shiki-light:#B58900;--shiki-dark:#E6DB74"> "bytes"</span><span style="--shiki-light:#2D2A2E;--shiki-dark:#F8F8F2">,</span></span>
+<span class="line"><span style="--shiki-light:#2DB0BF;--shiki-dark:#F8F8F2"> contentBytes</span><span style="--shiki-light:#2D2A2E;--shiki-dark:#F8F8F2">:</span><span style="--shiki-light:#2D2A2E;--shiki-dark:#F8F8F2"> fs.</span><span style="--shiki-light:#78A855;--shiki-dark:#A6E22E">readFileSync</span><span style="--shiki-light:#2D2A2E;--shiki-dark:#F8F8F2
+
+[… truncated 60395 chars …]
