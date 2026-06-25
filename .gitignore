@@ -49,3 +49,4 @@ Thumbs.db
 # Project specific
 otel-monitor.log
 .reasonix/
+REASONIX.md
