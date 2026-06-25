@@ -698,18 +698,15 @@ function loadMoreTraceData() {
                 return;
             }
 
-            // Append new events
-            const timeline = document.getElementById('trace-timeline');
-            if (timeline) {
-                const newEventsHtml = trace.events.map((event, index) =>
-                    renderTraceEvent(event, traceState.offset + index)
-                ).join('');
-                timeline.insertAdjacentHTML('beforeend', newEventsHtml);
-            }
-
-            // Update state
+            // Append new events and rebuild tree
             traceState.events = traceState.events.concat(trace.events);
             traceState.offset += trace.events.length;
+
+            const timeline = document.getElementById('trace-timeline');
+            if (timeline) {
+                const tree = buildTraceTree(traceState.events);
+                timeline.innerHTML = renderTraceTree(tree);
+            }
 
             // Check if we've loaded all data
             if (trace.events.length < traceState.limit || traceState.offset >= traceState.totalEvents) {
@@ -996,6 +993,70 @@ function renderTraceEvent(event, index) {
             </div>
         </div>
     `;
+}
+
+// ── Tree view helpers ─────────────────────────────────────────
+
+// Build a tree from flat events using parent_id
+function buildTraceTree(events) {
+    const nodeMap = {};
+    const roots = [];
+
+    // Create node objects
+    events.forEach((e, i) => {
+        const nodeId = e.id || `_evt_${i}`;
+        nodeMap[nodeId] = { ...e, children: [], _nodeId: nodeId, _idx: i };
+    });
+
+    // Link children to parents
+    events.forEach((e, i) => {
+        const nodeId = e.id || `_evt_${i}`;
+        const node = nodeMap[nodeId];
+        const parentId = e.parent_id;
+        if (parentId && nodeMap[parentId]) {
+            nodeMap[parentId].children.push(node);
+        } else {
+            roots.push(node);
+        }
+    });
+
+    return roots;
+}
+
+// Recursively render a trace tree
+function renderTraceTree(nodes, depth = 0) {
+    if (!nodes || nodes.length === 0) return '';
+    return nodes.map(node => {
+        const hasChildren = node.children && node.children.length > 0;
+        const toggleIcon = hasChildren ? '▾' : '';
+        const collapsibleClass = hasChildren ? ' collapsible' : '';
+        const eventHtml = renderTraceEvent(node, node._idx);
+
+        // If node has children, wrap them in a toggleable container
+        const childrenHtml = hasChildren
+            ? `<div class="trace-children" style="--depth: ${depth + 1}">${renderTraceTree(node.children, depth + 1)}</div>`
+            : '';
+
+        return `
+            <div class="trace-node${collapsibleClass}" data-depth="${depth}">
+                <div class="trace-toggle-bar">
+                    ${hasChildren ? `<span class="trace-toggle-btn" onclick="toggleTraceNode(this)">${toggleIcon}</span>` : '<span class="trace-toggle-spacer"></span>'}
+                </div>
+                <div class="trace-node-body">
+                    ${eventHtml}
+                    ${childrenHtml}
+                </div>
+            </div>
+        `;
+    }).join('');
+}
+
+// Toggle a tree node's children visibility
+function toggleTraceNode(btn) {
+    const node = btn.closest('.trace-node');
+    if (!node) return;
+    node.classList.toggle('collapsed');
+    btn.textContent = node.classList.contains('collapsed') ? '▸' : '▾';
 }
 
 // Render tokens tab
