@@ -1179,6 +1179,23 @@ td {
     margin-top: 8px;
 }
 
+/* Depth-based indentation (capped at depth 4) */
+.trace-node[data-depth="1"] > .trace-node-body { padding-left: 0; }
+.trace-node[data-depth="2"] > .trace-node-body { padding-left: 12px; }
+.trace-node[data-depth="3"] > .trace-node-body { padding-left: 20px; }
+.trace-node[data-depth="4"] > .trace-node-body { padding-left: 28px; }
+.trace-node[data-depth="5"] > .trace-node-body,
+.trace-node[data-depth="6"] > .trace-node-body,
+.trace-node[data-depth="7"] > .trace-node-body { padding-left: 32px; }
+
+/* Deeper levels get subtler border to indicate hierarchy */
+.trace-node[data-depth="2"] > .trace-node-body > .trace-children { border-left-color: rgba(99, 102, 241, 0.15); }
+.trace-node[data-depth="3"] > .trace-node-body > .trace-children { border-left-color: rgba(34, 211, 238, 0.12); }
+.trace-node[data-depth="4"] > .trace-node-body > .trace-children { border-left-color: rgba(248, 113, 113, 0.1); }
+.trace-node[data-depth="5"] > .trace-node-body > .trace-children,
+.trace-node[data-depth="6"] > .trace-node-body > .trace-children,
+.trace-node[data-depth="7"] > .trace-node-body > .trace-children { border-left-color: rgba(100, 116, 139, 0.08); }
+
 /* First-level children have slightly more gap from parent */
 .trace-node > .trace-node-body > .trace-children {
     margin-left: 4px;
@@ -1246,6 +1263,29 @@ td {
 
 .trace-model {
     color: var(--text-secondary);
+}
+
+.trace-provider {
+    color: var(--text-muted);
+    font-size: 10px;
+    padding: 1px 6px;
+    background: rgba(100, 116, 139, 0.15);
+    border-radius: 4px;
+}
+
+.trace-stop-reason {
+    color: var(--accent-orange);
+    font-size: 10px;
+    padding: 1px 6px;
+    background: rgba(251, 191, 36, 0.12);
+    border-radius: 4px;
+    text-transform: uppercase;
+}
+
+.trace-thinking-level {
+    color: var(--accent-purple);
+    font-size: 12px;
+    font-weight: 500;
 }
 
 .trace-content {

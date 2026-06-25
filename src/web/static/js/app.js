@@ -928,14 +928,20 @@ function renderTraceEvent(event, index) {
                 `).join('');
             }
 
+            // Use content_full for expandable content when available
+            const displayContent = event.content_full || event.content || '';
+            const displayContentForExpand = event.content_full || event.content || '';
+
             content = `
                 <div class="trace-event-header">
                     <span class="trace-role">${role === 'user' ? '用户' : role === 'assistant' ? '助手' : '工具结果'}</span>
                     ${event.model ? `<span class="trace-model">${escapeHtml(event.model)}</span>` : ''}
+                    ${event.provider ? `<span class="trace-provider">${escapeHtml(event.provider)}</span>` : ''}
                     ${event.input_tokens ? `<span class="trace-tokens">输入: ${formatNumber(event.input_tokens)}</span>` : ''}
                     ${event.output_tokens ? `<span class="trace-tokens">输出: ${formatNumber(event.output_tokens)}</span>` : ''}
+                    ${event.stop_reason && event.stop_reason !== 'end_turn' ? `<span class="trace-stop-reason">${escapeHtml(event.stop_reason)}</span>` : ''}
                 </div>
-                ${event.content ? renderExpandableContent(event.content, 'trace-content') : ''}
+                ${displayContentForExpand ? renderExpandableContent(displayContentForExpand, 'trace-content') : ''}
                 ${role === 'assistant' ? `
                 <div class="trace-feedback" data-session="${escapeHtml(traceState.sessionKey || '')}" data-event-id="${escapeHtml(event.id || '')}">
                     <button class="feedback-btn thumbs-up" onclick="sendFeedback(this, 1)" title="有用">👍</button>
@@ -985,7 +991,17 @@ function renderTraceEvent(event, index) {
         case 'session':
             icon = '📋';
             color = 'system-msg';
-            content = `<div class="trace-event-header">Session v${event.version || '?'}</div>`;
+            content = `<div class="trace-event-header">Session v${event.version || '?'} ${event.cwd ? `· ${escapeHtml(event.cwd)}` : ''}</div>`;
+            break;
+
+        case 'thinking_level_change':
+            icon = '🧠';
+            color = 'system-msg';
+            content = `
+                <div class="trace-event-header">
+                    <span class="trace-thinking-level">思维层级: ${escapeHtml(event.thinking_level || '-')}</span>
+                </div>
+            `;
             break;
 
         case 'custom':
@@ -1051,10 +1067,12 @@ function buildTraceTree(events) {
 // Recursively render a trace tree
 function renderTraceTree(nodes, depth = 0) {
     if (!nodes || nodes.length === 0) return '';
+    const AUTO_COLLAPSE_DEPTH = 2; // Auto-collapse nodes deeper than this
     return nodes.map(node => {
         const hasChildren = node.children && node.children.length > 0;
         const toggleIcon = hasChildren ? '▾' : '';
         const collapsibleClass = hasChildren ? ' collapsible' : '';
+        const autoCollapsed = depth > AUTO_COLLAPSE_DEPTH ? ' collapsed' : '';
         const eventHtml = renderTraceEvent(node, node._idx);
 
         // If node has children, wrap them in a toggleable container
@@ -1063,9 +1081,9 @@ function renderTraceTree(nodes, depth = 0) {
             : '';
 
         return `
-            <div class="trace-node${collapsibleClass}" data-depth="${depth}">
+            <div class="trace-node${collapsibleClass}${autoCollapsed}" data-depth="${depth}">
                 <div class="trace-toggle-bar">
-                    ${hasChildren ? `<span class="trace-toggle-btn" onclick="toggleTraceNode(this)">${toggleIcon}</span>` : '<span class="trace-toggle-spacer"></span>'}
+                    ${hasChildren ? `<span class="trace-toggle-btn" onclick="toggleTraceNode(this)">${autoCollapsed ? '▸' : toggleIcon}</span>` : '<span class="trace-toggle-spacer"></span>'}
                 </div>
                 <div class="trace-node-body">
                     ${eventHtml}
