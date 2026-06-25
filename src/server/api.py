@@ -20,16 +20,18 @@ _session_collector = None
 _gateway_collector = None
 _session_aggregator = None
 _model_aggregator = None
+_alert_checker = None
 
 
-def set_dependencies(store, session_collector, gateway_collector, session_aggregator, model_aggregator):
+def set_dependencies(store, session_collector, gateway_collector, session_aggregator, model_aggregator, alert_checker=None):
     """Set dependencies from main app."""
-    global _store, _session_collector, _gateway_collector, _session_aggregator, _model_aggregator
+    global _store, _session_collector, _gateway_collector, _session_aggregator, _model_aggregator, _alert_checker
     _store = store
     _session_collector = session_collector
     _gateway_collector = gateway_collector
     _session_aggregator = session_aggregator
     _model_aggregator = model_aggregator
+    _alert_checker = alert_checker
 
 
 @router.get("/health")
@@ -665,6 +667,51 @@ async def api_dashboard():
             dashboard["cost"] = cost_summary
 
     return dashboard
+
+
+@router.get("/alerts")
+async def api_alerts(unread_only: bool = False, limit: int = 50):
+    """Get alerts from in-memory checker + DB."""
+    alerts = []
+
+    # In-memory alerts from checker
+    if _alert_checker:
+        alerts = _alert_checker.get_alerts(unread_only=unread_only, limit=limit)
+
+    # DB alerts
+    if _store:
+        db_alerts = _store.get_alerts(limit=limit, unread_only=unread_only)
+        # Merge, preferring in-memory (more up-to-date)
+        seen = set(a["timestamp"] + a["rule_type"] for a in alerts)
+        for a in db_alerts:
+            key = a["timestamp"] + a["rule_type"]
+            if key not in seen:
+                alerts.append({
+                    "name": a["name"],
+                    "rule_type": a["rule_type"],
+                    "severity": a["severity"],
+                    "message": a["message"],
+                    "timestamp": a["timestamp"],
+                    "acknowledged": bool(a["acknowledged"]),
+                })
+                seen.add(key)
+
+    alerts.sort(key=lambda a: a.get("timestamp", ""), reverse=True)
+    unread_count = sum(1 for a in alerts if not a.get("acknowledged"))
+    return {"alerts": alerts[:limit], "unread_count": unread_count, "total": len(alerts)}
+
+
+@router.post("/alerts/acknowledge")
+async def api_acknowledge_alerts(all: bool = False, alert_id: int = None):
+    """Acknowledge alerts."""
+    if _alert_checker:
+        if all:
+            _alert_checker.acknowledge_all()
+        elif alert_id is not None:
+            _alert_checker.acknowledge_alert(alert_id)
+    if _store and alert_id and not all:
+        _store.acknowledge_alert(alert_id)
+    return {"ok": True}
 
 
 # WebSocket for real-time updates

@@ -87,6 +87,20 @@ class MetricsStore:
                 UNIQUE(model, provider, date)
             );
 
+            CREATE TABLE IF NOT EXISTS alerts (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                rule_type TEXT NOT NULL,
+                severity TEXT NOT NULL,
+                name TEXT NOT NULL,
+                message TEXT NOT NULL,
+                acknowledged INTEGER DEFAULT 0,
+                timestamp TEXT NOT NULL,
+                created_at TEXT DEFAULT CURRENT_TIMESTAMP
+            );
+
+            CREATE INDEX IF NOT EXISTS idx_alerts_timestamp ON alerts(timestamp);
+            CREATE INDEX IF NOT EXISTS idx_alerts_ack ON alerts(acknowledged);
+
             CREATE TABLE IF NOT EXISTS token_usage (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 model TEXT,
@@ -452,6 +466,38 @@ class MetricsStore:
 
         conn.commit()
         logger.info(f"Cleaned up data older than {days} days")
+
+    def record_alert(self, rule_type: str, severity: str, name: str, message: str):
+        """Record an alert firing in the database."""
+        conn = self._get_conn()
+        ts = datetime.now().isoformat()
+        conn.execute(
+            "INSERT INTO alerts (rule_type, severity, name, message, timestamp) VALUES (?, ?, ?, ?, ?)",
+            (rule_type, severity, name, message, ts),
+        )
+        conn.commit()
+
+    def get_alerts(self, limit: int = 50, unread_only: bool = False) -> list:
+        """Get stored alert history."""
+        conn = self._get_conn()
+        if unread_only:
+            rows = conn.execute(
+                "SELECT * FROM alerts WHERE acknowledged = 0 ORDER BY timestamp DESC LIMIT ?",
+                (limit,),
+            ).fetchall()
+        else:
+            rows = conn.execute(
+                "SELECT * FROM alerts ORDER BY timestamp DESC LIMIT ?",
+                (limit,),
+            ).fetchall()
+        return [dict(r) for r in rows]
+
+    def acknowledge_alert(self, alert_id: int) -> bool:
+        """Mark an alert as acknowledged."""
+        conn = self._get_conn()
+        conn.execute("UPDATE alerts SET acknowledged = 1 WHERE id = ?", (alert_id,))
+        conn.commit()
+        return conn.total_changes > 0
 
     def close(self):
         """Close database connection."""

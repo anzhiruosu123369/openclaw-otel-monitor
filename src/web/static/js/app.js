@@ -1520,3 +1520,75 @@ function updateTPMDisplay() {
         tpmTrendChart.update('none');
     }
 }
+
+// ── Alert System ────────────────────────────────────────────
+
+// Fetch alerts and update badge
+async function fetchAlerts() {
+    try {
+        const resp = await fetch('/api/alerts?limit=50');
+        const data = await resp.json();
+        const badge = document.getElementById('alert-badge');
+        const count = data.unread_count || 0;
+        if (badge) {
+            badge.textContent = count > 99 ? '99+' : count;
+            badge.style.display = count > 0 ? 'flex' : 'none';
+        }
+        return data;
+    } catch {
+        return { alerts: [], unread_count: 0 };
+    }
+}
+
+// Toggle alert panel visibility
+async function toggleAlertPanel() {
+    const panel = document.getElementById('alert-panel');
+    if (!panel) return;
+    const isVisible = panel.style.display !== 'none';
+    if (isVisible) {
+        panel.style.display = 'none';
+        return;
+    }
+    panel.style.display = 'flex';
+    const body = document.getElementById('alert-panel-body');
+    if (!body) return;
+    body.innerHTML = '<div class="alert-loading">加载中...</div>';
+    const data = await fetchAlerts();
+    if (!data.alerts || data.alerts.length === 0) {
+        body.innerHTML = '<div class="alert-empty">✅ 暂无告警</div>';
+        return;
+    }
+    body.innerHTML = data.alerts.map(a => `
+        <div class="alert-item ${a.severity}">
+            <div class="alert-item-header">
+                <span class="alert-item-name">${escapeHtml(a.name)}</span>
+                <span class="alert-item-severity ${a.severity}">${a.severity}</span>
+            </div>
+            <div class="alert-item-message">${escapeHtml(a.message)}</div>
+            <div class="alert-item-time">${formatAlertTime(a.timestamp)}</div>
+        </div>
+    `).join('');
+}
+
+// Mark all alerts as read
+async function markAllRead() {
+    await fetch('/api/alerts/acknowledge?all=true', { method: 'POST' });
+    const badge = document.getElementById('alert-badge');
+    if (badge) { badge.style.display = 'none'; }
+    const body = document.getElementById('alert-panel-body');
+    if (body) body.innerHTML = '<div class="alert-empty">✅ 已全部标记已读</div>';
+}
+
+function formatAlertTime(ts) {
+    if (!ts) return '';
+    try {
+        const d = new Date(ts);
+        return d.toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' });
+    } catch { return ts; }
+}
+
+// Poll alerts every 30 seconds
+setInterval(fetchAlerts, 30000);
+
+// Initial fetch
+setTimeout(fetchAlerts, 2000);

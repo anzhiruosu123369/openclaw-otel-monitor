@@ -20,3 +20,26 @@ retention_days = 7
 [logging]
 level = "INFO"
 format = "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+
+[alerting]
+check_interval = 30  # seconds
+
+[alerting.gateway_down]
+enabled = true
+params = { max_failures = 2 }
+
+[alerting.tpm_high]
+enabled = true
+params = { threshold_pct = 80, rate_limit_max = 100000 }
+
+[alerting.error_rate_high]
+enabled = true
+params = { threshold = 5, window_minutes = 10 }
+
+[alerting.session_stuck]
+enabled = true
+params = { max_minutes = 30 }
+
+[alerting.cost_spike]
+enabled = true
+params = { daily_threshold_cny = 100 }

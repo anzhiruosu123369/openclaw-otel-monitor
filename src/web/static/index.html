@@ -24,8 +24,26 @@
             </div>
             <span class="last-update" id="last-update">-</span>
             <span id="connection-status" class="connection-status"></span>
+            <div class="alert-bell" onclick="toggleAlertPanel()">
+                <span class="bell-icon">🔔</span>
+                <span class="bell-badge" id="alert-badge" style="display:none">0</span>
+            </div>
         </div>
     </header>
+
+    <!-- Alert Panel -->
+    <div id="alert-panel" class="alert-panel" style="display:none">
+        <div class="alert-panel-header">
+            <span>告警通知</span>
+            <div class="alert-panel-actions">
+                <button class="alert-btn-small" onclick="markAllRead()">全部已读</button>
+                <button class="alert-btn-small" onclick="toggleAlertPanel()">✕</button>
+            </div>
+        </div>
+        <div class="alert-panel-body" id="alert-panel-body">
+            <div class="alert-loading">加载中...</div>
+        </div>
+    </div>
 
     <main class="container">
         <!-- Stats Grid - First Screen -->

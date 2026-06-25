@@ -15,6 +15,7 @@ from ..collector.gateway_collector import GatewayCollector
 from ..aggregator.metrics_store import MetricsStore
 from ..aggregator.session_aggregator import SessionAggregator
 from ..aggregator.model_aggregator import ModelAggregator
+from ..alerting.checker import AlertChecker
 from .api import router, set_dependencies, broadcast_update
 
 logger = logging.getLogger(__name__)
@@ -27,12 +28,13 @@ _session_collector: SessionCollector = None
 _gateway_collector: GatewayCollector = None
 _session_aggregator: SessionAggregator = None
 _model_aggregator: ModelAggregator = None
+_alert_checker: AlertChecker = None
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """Application lifespan manager."""
-    global _config, _store, _session_collector, _gateway_collector, _session_aggregator, _model_aggregator
+    global _config, _store, _session_collector, _gateway_collector, _session_aggregator, _model_aggregator, _alert_checker
 
     logger.info("Starting OpenClaw OTel Monitor...")
 
@@ -55,6 +57,10 @@ async def lifespan(app: FastAPI):
 
     # Set API dependencies
     set_dependencies(_store, _session_collector, _gateway_collector, _session_aggregator, _model_aggregator)
+
+    # Initialize alert checker
+    _alert_checker = AlertChecker(_store, _session_collector, _gateway_collector, interval=30)
+    set_dependencies(_store, _session_collector, _gateway_collector, _session_aggregator, _model_aggregator, _alert_checker)
 
     # Setup callbacks
     async def on_session_update(event_type, data):
@@ -135,6 +141,7 @@ async def lifespan(app: FastAPI):
     # Start background tasks
     tasks.append(asyncio.create_task(session_scanner()))
     tasks.append(asyncio.create_task(gateway_monitor()))
+    tasks.append(asyncio.create_task(_alert_checker.run_loop()))
 
     logger.info(f"Monitor started on http://{_config.server.host}:{_config.server.port}")
 
@@ -148,6 +155,7 @@ async def lifespan(app: FastAPI):
 
     _session_collector.stop_watching()
     await _gateway_collector.close()
+    _alert_checker.stop()
     _store.close()
 
 
