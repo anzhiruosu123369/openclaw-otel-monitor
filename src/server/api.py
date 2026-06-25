@@ -714,6 +714,38 @@ async def api_acknowledge_alerts(all: bool = False, alert_id: int = None):
     return {"ok": True}
 
 
+@router.post("/sessions/{session_key}/feedback")
+async def api_session_feedback(session_key: str, score: int = 0, event_id: str = None,
+                                comment: str = "", score_type: str = "thumbs"):
+    """Submit user feedback for a session or specific event.
+
+    score: +1 (thumbs up), -1 (thumbs down), or 1-5 (star rating)
+    """
+    if _store:
+        if score_type == "thumbs":
+            score = 1 if score > 0 else -1
+        _store.record_score(
+            session_key=session_key,
+            event_id=event_id or "",
+            score=score,
+            score_type=score_type,
+            comment=comment,
+            source="user",
+        )
+        return {"ok": True, "score": score}
+    return {"error": "store not available"}, 503
+
+
+@router.get("/scores")
+async def api_scores(session_key: str = None, limit: int = 100):
+    """Get scores, optionally filtered by session."""
+    if _store:
+        scores = _store.get_scores(session_key=session_key, limit=limit)
+        summary = _store.get_score_summary()
+        return {"scores": scores, "summary": summary}
+    return {"scores": [], "summary": {"total": 0, "thumbs_up": 0, "thumbs_down": 0, "score_rate": 0}}
+
+
 # WebSocket for real-time updates
 class ConnectionManager:
     """Manage WebSocket connections."""

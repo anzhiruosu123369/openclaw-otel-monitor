@@ -101,6 +101,21 @@ class MetricsStore:
             CREATE INDEX IF NOT EXISTS idx_alerts_timestamp ON alerts(timestamp);
             CREATE INDEX IF NOT EXISTS idx_alerts_ack ON alerts(acknowledged);
 
+            CREATE TABLE IF NOT EXISTS scores (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                session_key TEXT NOT NULL,
+                event_id TEXT,
+                score_type TEXT NOT NULL DEFAULT 'thumbs',
+                score INTEGER NOT NULL,
+                comment TEXT,
+                source TEXT DEFAULT 'user',
+                timestamp TEXT NOT NULL,
+                created_at TEXT DEFAULT CURRENT_TIMESTAMP
+            );
+
+            CREATE INDEX IF NOT EXISTS idx_scores_session ON scores(session_key);
+            CREATE INDEX IF NOT EXISTS idx_scores_timestamp ON scores(timestamp);
+
             CREATE TABLE IF NOT EXISTS token_usage (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 model TEXT,
@@ -498,6 +513,50 @@ class MetricsStore:
         conn.execute("UPDATE alerts SET acknowledged = 1 WHERE id = ?", (alert_id,))
         conn.commit()
         return conn.total_changes > 0
+
+    def record_score(self, session_key: str, score: int, event_id: str = None,
+                     score_type: str = "thumbs", comment: str = "", source: str = "user"):
+        """Record a user/automated score for a session or event."""
+        conn = self._get_conn()
+        ts = datetime.now().isoformat()
+        conn.execute(
+            "INSERT INTO scores (session_key, event_id, score_type, score, comment, source, timestamp) "
+            "VALUES (?, ?, ?, ?, ?, ?, ?)",
+            (session_key, event_id, score_type, score, comment, source, ts),
+        )
+        conn.commit()
+
+    def get_scores(self, session_key: str = None, limit: int = 100) -> list:
+        """Get scores, optionally filtered by session."""
+        conn = self._get_conn()
+        if session_key:
+            rows = conn.execute(
+                "SELECT * FROM scores WHERE session_key = ? ORDER BY timestamp DESC LIMIT ?",
+                (session_key, limit),
+            ).fetchall()
+        else:
+            rows = conn.execute(
+                "SELECT * FROM scores ORDER BY timestamp DESC LIMIT ?",
+                (limit,),
+            ).fetchall()
+        return [dict(r) for r in rows]
+
+    def get_score_summary(self) -> dict:
+        """Get aggregate score statistics."""
+        conn = self._get_conn()
+        total = conn.execute("SELECT COUNT(*) as c FROM scores").fetchone()["c"]
+        thumbs_up = conn.execute(
+            "SELECT COUNT(*) as c FROM scores WHERE score_type='thumbs' AND score > 0"
+        ).fetchone()["c"]
+        thumbs_down = conn.execute(
+            "SELECT COUNT(*) as c FROM scores WHERE score_type='thumbs' AND score < 0"
+        ).fetchone()["c"]
+        return {
+            "total": total,
+            "thumbs_up": thumbs_up,
+            "thumbs_down": thumbs_down,
+            "score_rate": round(thumbs_up / max(total, 1) * 100, 1),
+        }
 
     def close(self):
         """Close database connection."""

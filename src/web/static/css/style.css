@@ -142,8 +142,8 @@ main {
 /* ========== Stats Grid - First Screen ========== */
 .stats-grid {
     display: grid;
-    grid-template-columns: repeat(5, 1fr);
-    gap: 16px;
+    grid-template-columns: repeat(6, 1fr);
+    gap: 14px;
     margin-bottom: 32px;
 }
 
@@ -175,6 +175,7 @@ main {
 .stat-card:nth-child(3)::before { background: var(--accent-purple); }
 .stat-card:nth-child(4)::before { background: var(--accent-orange); }
 .stat-card:nth-child(5)::before { background: var(--accent-red); }
+.stat-card:nth-child(6)::before { background: var(--accent-green); }
 
 .stat-label {
     font-size: 13px;
@@ -1500,6 +1501,46 @@ td {
     padding: 32px;
     color: var(--text-muted);
     font-size: 14px;
+}
+
+/* ========== Trace Feedback ========== */
+.trace-feedback {
+    display: flex;
+    gap: 6px;
+    margin-top: 8px;
+    padding-top: 8px;
+    border-top: 1px solid rgba(255,255,255,0.05);
+}
+
+.feedback-btn {
+    background: transparent;
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    padding: 4px 10px;
+    cursor: pointer;
+    font-size: 13px;
+    transition: all 0.15s;
+    line-height: 1;
+    opacity: 0.5;
+}
+
+.feedback-btn:hover {
+    opacity: 1;
+    border-color: var(--text-muted);
+}
+
+.feedback-btn.active {
+    opacity: 1;
+}
+
+.feedback-btn.thumbs-up.active {
+    background: rgba(52, 211, 153, 0.15);
+    border-color: var(--accent-green);
+}
+
+.feedback-btn.thumbs-down.active {
+    background: rgba(248, 113, 113, 0.15);
+    border-color: var(--accent-red);
 }
 
 /* ========== Text Ellipsis ========== */

@@ -490,6 +490,9 @@ function updateDashboard(data) {
     const costCard = document.getElementById('total-cost');
     if (costCard) costCard.textContent = '￥' + formatCost(totalCost);
 
+    // Fetch score summary
+    fetchScoreSummary();
+
     // Update model chart - 使用现代配色
     const modelDist = data.models?.distribution || {};
     modelChart.data.labels = Object.keys(modelDist);
@@ -933,6 +936,11 @@ function renderTraceEvent(event, index) {
                     ${event.output_tokens ? `<span class="trace-tokens">输出: ${formatNumber(event.output_tokens)}</span>` : ''}
                 </div>
                 ${event.content ? renderExpandableContent(event.content, 'trace-content') : ''}
+                ${role === 'assistant' ? `
+                <div class="trace-feedback" data-session="${escapeHtml(traceState.sessionKey || '')}" data-event-id="${escapeHtml(event.id || '')}">
+                    <button class="feedback-btn thumbs-up" onclick="sendFeedback(this, 1)" title="有用">👍</button>
+                    <button class="feedback-btn thumbs-down" onclick="sendFeedback(this, -1)" title="无用">👎</button>
+                </div>` : ''}
                 ${toolCallsHtml}
                 ${toolResultsHtml}
                 ${event.error ? `<div class="trace-error">❌ ${escapeHtml(event.error)}</div>` : ''}
@@ -1587,8 +1595,40 @@ function formatAlertTime(ts) {
     } catch { return ts; }
 }
 
+// Send feedback (thumbs up/down)
+async function sendFeedback(btn, score) {
+    const feedbackDiv = btn.closest('.trace-feedback');
+    if (!feedbackDiv || feedbackDiv.dataset.submitted) return;
+    const sessionKey = feedbackDiv.dataset.session;
+    const eventId = feedbackDiv.dataset.eventId;
+    try {
+        const resp = await fetch(`/api/sessions/${encodeURIComponent(sessionKey)}/feedback?score=${score}&event_id=${encodeURIComponent(eventId)}`, { method: 'POST' });
+        if (!resp.ok) return;
+        feedbackDiv.dataset.submitted = '1';
+        feedbackDiv.querySelectorAll('.feedback-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+    } catch {}
+}
+
+// Fetch score summary and update dashboard
+async function fetchScoreSummary() {
+    try {
+        const resp = await fetch('/api/scores?limit=1');
+        const data = await resp.json();
+        const summary = data.summary || {};
+        const el = document.getElementById('score-rate');
+        if (el && summary.total > 0) {
+            el.textContent = summary.score_rate + '%';
+        } else if (el) {
+            el.textContent = '-';
+        }
+        return summary;
+    } catch { return {}; }
+}
+
 // Poll alerts every 30 seconds
 setInterval(fetchAlerts, 30000);
 
 // Initial fetch
 setTimeout(fetchAlerts, 2000);
+setTimeout(fetchScoreSummary, 3000);
