@@ -1067,7 +1067,7 @@ function buildTraceTree(events) {
 // Recursively render a trace tree
 function renderTraceTree(nodes, depth = 0) {
     if (!nodes || nodes.length === 0) return '';
-    const AUTO_COLLAPSE_DEPTH = 2; // Auto-collapse nodes deeper than this
+    const AUTO_COLLAPSE_DEPTH = 3; // Auto-collapse nodes deeper than this
     return nodes.map(node => {
         const hasChildren = node.children && node.children.length > 0;
         const toggleIcon = hasChildren ? '▾' : '';
