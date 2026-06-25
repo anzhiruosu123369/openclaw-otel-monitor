@@ -1168,6 +1168,24 @@ td {
     height: 16px;
 }
 
+/* Child count badge shown next to collapsed parent event */
+.child-count-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 22px;
+    height: 18px;
+    padding: 0 6px;
+    margin-left: 8px;
+    background: rgba(99, 102, 241, 0.2);
+    color: var(--accent-purple);
+    font-size: 10px;
+    font-weight: 600;
+    border-radius: 9px;
+    font-family: 'JetBrains Mono', monospace;
+    vertical-align: middle;
+}
+
 /* Nested children indentation via left border */
 .trace-children {
     border-left: 1px solid rgba(255, 255, 255, 0.06);

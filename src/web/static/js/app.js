@@ -1069,21 +1069,27 @@ function renderTraceTree(nodes, depth = 0) {
     if (!nodes || nodes.length === 0) return '';
     return nodes.map(node => {
         const hasChildren = node.children && node.children.length > 0;
-        const toggleIcon = hasChildren ? '▾' : '';
+        const childCount = node.children ? node.children.length : 0;
+        // Auto-collapse when a single parent has too many children (e.g. 8 tool calls)
+        const manyChildren = hasChildren && childCount > 5;
+        const toggleIcon = hasChildren ? (manyChildren ? '▸' : '▾') : '';
         const collapsibleClass = hasChildren ? ' collapsible' : '';
+        const autoClass = manyChildren ? ' collapsed' : '';
         const eventHtml = renderTraceEvent(node, node._idx);
 
         const childrenHtml = hasChildren
             ? `<div class="trace-children" style="--depth: ${depth + 1}">${renderTraceTree(node.children, depth + 1)}</div>`
             : '';
 
+        const badgeHtml = manyChildren ? `<span class="child-count-badge">+${childCount}</span>` : '';
+
         return `
-            <div class="trace-node${collapsibleClass}" data-depth="${depth}">
+            <div class="trace-node${collapsibleClass}${autoClass}" data-depth="${depth}">
                 <div class="trace-toggle-bar">
                     ${hasChildren ? `<span class="trace-toggle-btn" onclick="toggleTraceNode(this)">${toggleIcon}</span>` : '<span class="trace-toggle-spacer"></span>'}
                 </div>
                 <div class="trace-node-body">
-                    ${eventHtml}
+                    ${eventHtml}${badgeHtml}
                     ${childrenHtml}
                 </div>
             </div>
