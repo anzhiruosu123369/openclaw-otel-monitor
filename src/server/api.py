@@ -7,6 +7,8 @@ import asyncio
 import logging
 import json
 
+from ..cost import compute_cost, compute_costs
+
 logger = logging.getLogger(__name__)
 
 router = APIRouter()
@@ -102,6 +104,13 @@ async def api_sessions(status: Optional[str] = None, limit: int = 50):
                 "last_user_message": state.last_user_message,
                 "last_assistant_message": state.last_assistant_message,
                 "message_count": state.message_count,
+                "total_tokens": state.total_input_tokens + state.total_output_tokens,
+                "total_cost": round(compute_cost(
+                    state.last_model or "unknown",
+                    state.last_provider or "",
+                    state.total_input_tokens,
+                    state.total_output_tokens,
+                ), 4),
                 "updated_at": updated_at.isoformat() if updated_at else None,
                 "date": date_str,
                 "time": time_str,
@@ -364,6 +373,11 @@ async def api_session_detail(session_key: str):
             "token_summary": token_summary,
             "total_input_tokens": state.total_input_tokens,
             "total_output_tokens": state.total_output_tokens,
+            "total_cost": round(sum(
+                compute_cost(u.get("model", "unknown"), u.get("provider", ""),
+                             u.get("input_tokens", 0), u.get("output_tokens", 0))
+                for u in state.token_usage
+            ), 4),
         }
     return {"error": "Session not found"}
 
@@ -494,7 +508,16 @@ async def api_models():
 async def api_model_stats(days: int = 7):
     """Get detailed model statistics from database."""
     if _store:
-        return _store.get_model_stats(days=days)
+        stats = _store.get_model_stats(days=days)
+        # Add cost to each model
+        for m in stats:
+            m["total_cost"] = round(compute_cost(
+                m.get("model", "unknown"),
+                m.get("provider", ""),
+                m.get("total_input_tokens", 0),
+                m.get("total_output_tokens", 0),
+            ), 4)
+        return stats
     return []
 
 
@@ -620,6 +643,26 @@ async def api_dashboard():
             "top_models": _model_aggregator.get_stats().get("top_models", []),
         }
         dashboard["tokens"] = _model_aggregator.get_token_summary()
+
+        # Cost summary from model stats
+        model_stats = _model_aggregator.get_stats().get("db_stats", [])
+        if model_stats:
+            cost_summary = {"total_cost": 0.0, "by_model": []}
+            for m in model_stats:
+                cost = compute_cost(
+                    m.get("model", "unknown"),
+                    m.get("provider", ""),
+                    m.get("total_input_tokens", 0),
+                    m.get("total_output_tokens", 0),
+                )
+                cost_summary["total_cost"] += cost
+                cost_summary["by_model"].append({
+                    "model": m.get("model"),
+                    "provider": m.get("provider"),
+                    "cost": round(cost, 4),
+                })
+            cost_summary["total_cost"] = round(cost_summary["total_cost"], 4)
+            dashboard["cost"] = cost_summary
 
     return dashboard
 

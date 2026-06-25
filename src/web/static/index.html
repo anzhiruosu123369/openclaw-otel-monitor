@@ -46,6 +46,10 @@
                 <div class="stat-label">使用模型数</div>
                 <div class="stat-value mono" id="model-count">0</div>
             </div>
+            <div class="stat-card">
+                <div class="stat-label">总费用</div>
+                <div class="stat-value mono" id="total-cost" style="color: var(--accent-orange)">$0</div>
+            </div>
         </section>
 
         <!-- TPM Section - Real-time Monitor -->
@@ -161,6 +165,7 @@
                             <th>模型</th>
                             <th>消息数</th>
                             <th>Tokens</th>
+                            <th>费用</th>
                             <th>更新时间</th>
                         </tr>
                     </thead>
@@ -187,11 +192,12 @@
                             <th>调用</th>
                             <th>输入</th>
                             <th>输出</th>
+                            <th>费用</th>
                         </tr>
                     </thead>
                     <tbody id="models-tbody">
                         <tr>
-                            <td colspan="4" class="loading">加载中...</td>
+                            <td colspan="5" class="loading">加载中...</td>
                         </tr>
                     </tbody>
                 </table>

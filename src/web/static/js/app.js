@@ -485,6 +485,11 @@ function updateDashboard(data) {
     document.getElementById('model-count').textContent =
         Object.keys(data.models?.distribution || {}).length;
 
+    // Update cost card
+    const totalCost = data.cost?.total_cost || 0;
+    const costCard = document.getElementById('total-cost');
+    if (costCard) costCard.textContent = '$' + formatCost(totalCost);
+
     // Update model chart - 使用现代配色
     const modelDist = data.models?.distribution || {};
     modelChart.data.labels = Object.keys(modelDist);
@@ -513,9 +518,18 @@ function updateSessionsTable(sessions) {
             <td>${escapeHtml(s.last_model || '-')}</td>
             <td class="mono">${s.message_count || 0}</td>
             <td class="mono">${formatNumber(s.total_tokens || 0)}</td>
+            <td class="mono" style="color: var(--accent-orange)">$${formatCost(s.total_cost)}</td>
             <td>${formatTime(s.updated_at)}</td>
         </tr>
     `).join('');
+}
+
+// Format cost with appropriate precision
+function formatCost(cost) {
+    if (!cost || cost === 0) return '0';
+    if (cost < 0.01) return cost.toFixed(4);
+    if (cost < 1) return cost.toFixed(3);
+    return cost.toFixed(2);
 }
 
 // Get status class for badge
@@ -555,6 +569,7 @@ function updateModelsTable(models) {
             <td class="mono">${formatNumber(m.total_calls || 0)}</td>
             <td class="mono">${formatNumber(m.total_input_tokens || 0)}</td>
             <td class="mono">${formatNumber(m.total_output_tokens || 0)}</td>
+            <td class="mono" style="color: var(--accent-orange)">$${formatCost(m.total_cost)}</td>
         </tr>
     `).join('');
 }
@@ -831,6 +846,8 @@ function renderOverviewTab(data) {
                 <div class="detail-row"><span class="detail-label">状态:</span> <span class="status-badge ${getStatusClass(data.status)}">${getStatusText(data.status)}</span></div>
                 <div class="detail-row"><span class="detail-label">通道:</span> <span class="detail-value">${escapeHtml(data.channel || '-')}</span></div>
                 <div class="detail-row"><span class="detail-label">消息数:</span> <span class="detail-value">${data.message_count || 0}</span></div>
+                <div class="detail-row"><span class="detail-label">Token:</span> <span class="detail-value">${formatNumber((data.total_input_tokens||0) + (data.total_output_tokens||0))}</span></div>
+                <div class="detail-row"><span class="detail-label">费用:</span> <span class="detail-value" style="color:var(--accent-orange)">$${formatCost(data.total_cost)}</span></div>
                 <div class="detail-row"><span class="detail-label">更新时间:</span> <span class="detail-value">${formatTime(data.updated_at)}</span></div>
             </div>
         </div>
