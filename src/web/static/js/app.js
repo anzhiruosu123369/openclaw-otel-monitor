@@ -1067,23 +1067,20 @@ function buildTraceTree(events) {
 // Recursively render a trace tree
 function renderTraceTree(nodes, depth = 0) {
     if (!nodes || nodes.length === 0) return '';
-    const AUTO_COLLAPSE_DEPTH = 3; // Auto-collapse nodes deeper than this
     return nodes.map(node => {
         const hasChildren = node.children && node.children.length > 0;
         const toggleIcon = hasChildren ? '▾' : '';
         const collapsibleClass = hasChildren ? ' collapsible' : '';
-        const autoCollapsed = depth > AUTO_COLLAPSE_DEPTH ? ' collapsed' : '';
         const eventHtml = renderTraceEvent(node, node._idx);
 
-        // If node has children, wrap them in a toggleable container
         const childrenHtml = hasChildren
             ? `<div class="trace-children" style="--depth: ${depth + 1}">${renderTraceTree(node.children, depth + 1)}</div>`
             : '';
 
         return `
-            <div class="trace-node${collapsibleClass}${autoCollapsed}" data-depth="${depth}">
+            <div class="trace-node${collapsibleClass}" data-depth="${depth}">
                 <div class="trace-toggle-bar">
-                    ${hasChildren ? `<span class="trace-toggle-btn" onclick="toggleTraceNode(this)">${autoCollapsed ? '▸' : toggleIcon}</span>` : '<span class="trace-toggle-spacer"></span>'}
+                    ${hasChildren ? `<span class="trace-toggle-btn" onclick="toggleTraceNode(this)">${toggleIcon}</span>` : '<span class="trace-toggle-spacer"></span>'}
                 </div>
                 <div class="trace-node-body">
                     ${eventHtml}
